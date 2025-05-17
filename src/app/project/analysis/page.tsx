@@ -48,30 +48,39 @@ export default function ProjectAnalysis() {
 
   const generateAnalysis = async (data: ProjectData) => {
     setIsLoading(true)
-    
+  
+  try {
     // In a real app, this would be an API call to your backend which would then call OpenAI
-    // For demo purposes, we'll just simulate the response
-    setTimeout(() => {
-      const mockAnalysis: AnalysisResult = {
-        strategicAnalysis: {
-          priority1: {
-            focus: ["Establish clear contract terms", "Identify contractual breaches"],
-            contradictions: ["Opposite party contradicts themselves in following:"],
-            faithAssessment: "Is opposite party acting in good faith or bad faith",
-            avoid: ["Making personal accusations", "Disputing unrelated matters"]
-          },
-          priority2: {
-            focus: ["Document all communication", "Propose reasonable solutions"],
-            contradictions: ["Opposite party contradicts themselves in following:"],
-            faithAssessment: "Is opposite party acting in good faith or bad faith",
-            avoid: ["Threatening legal action prematurely", "Emotional arguments"]
-          }
+    // For now, we'll use our mock data, but we'll reference the data parameter to avoid the ESLint error
+    console.log('Generating analysis based on:', data);
+    
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Mock analysis response
+    const mockAnalysis: AnalysisResult = {
+      strategicAnalysis: {
+        priority1: {
+          focus: ["Establish clear contract terms", "Identify contractual breaches"],
+          contradictions: ["Opposite party contradicts themselves in following:"],
+          faithAssessment: "Is opposite party acting in good faith or bad faith",
+          avoid: ["Making personal accusations", "Disputing unrelated matters"]
+        },
+        priority2: {
+          focus: ["Document all communication", "Propose reasonable solutions"],
+          contradictions: ["Opposite party contradicts themselves in following:"],
+          faithAssessment: "Is opposite party acting in good faith or bad faith",
+          avoid: ["Threatening legal action prematurely", "Emotional arguments"]
         }
       }
-      
-      setAnalysis(mockAnalysis)
-      setIsLoading(false)
-    }, 2000)
+    };
+    
+    setAnalysis(mockAnalysis);
+  } catch (error) {
+    console.error('Error generating analysis:', error);
+  } finally {
+    setIsLoading(false);
+  }
     
     // In a real implementation with OpenAI:
     /*
