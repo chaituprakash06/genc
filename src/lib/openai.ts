@@ -89,7 +89,7 @@ export async function runAssistant(threadId: string, systemPrompt?: string) {
  */
 export async function uploadFile(file: File | Buffer | NodeJS.ReadableStream, fileName: string) {
   // Convert Buffer to File-like object if needed
-  let fileToUpload: any = file;
+  let fileToUpload: File | Buffer | NodeJS.ReadableStream = file;
   
   if (Buffer.isBuffer(file)) {
     // Create a File-like object from Buffer

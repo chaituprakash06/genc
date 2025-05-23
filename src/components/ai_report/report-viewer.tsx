@@ -3,7 +3,6 @@
 
 import { Report } from '@/app/project/ai_report/page'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 
 interface ReportViewerProps {
   report: Report

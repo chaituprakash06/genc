@@ -1,7 +1,7 @@
 // app/project/ai_report/page.tsx
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Navbar from '@/components/layout/navbar'
 import ReportGenerator from '@/components/ai_report/report-generator'
 import ReportViewer from '@/components/ai_report/report-viewer'
@@ -27,7 +27,7 @@ export default function AIReportPage() {
   const [selectedReport, setSelectedReport] = useState<Report | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
 
-  const handleGenerateReport = async (documentIds: string[]) => {
+  const handleGenerateReport = async () => {
     setIsGenerating(true)
     
     // Mock report generation - replace with actual API call

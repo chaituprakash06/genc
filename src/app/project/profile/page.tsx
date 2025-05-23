@@ -106,7 +106,7 @@ export default function ProfilePage() {
                           ...profile,
                           preferences: {
                             ...profile.preferences,
-                            negotiationStyle: e.target.value as any
+                            negotiationStyle: e.target.value as 'aggressive' | 'collaborative' | 'defensive'
                           }
                         })}
                       >
@@ -128,7 +128,7 @@ export default function ProfilePage() {
                           ...profile,
                           preferences: {
                             ...profile.preferences,
-                            riskTolerance: e.target.value as any
+                            riskTolerance: e.target.value as 'low' | 'medium' | 'high'
                           }
                         })}
                       >
