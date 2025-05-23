@@ -132,7 +132,7 @@ export async function getAssistant() {
  * Update assistant with file IDs
  * Note: In the latest OpenAI API, files are attached to messages, not assistants
  */
-export async function updateAssistantFiles(fileIds: string[]) {
+export async function updateAssistantFiles() {
   if (!assistantId) {
     throw new Error('Assistant ID is not configured in environment variables');
   }
