@@ -1,6 +1,6 @@
 // app/page.tsx
-import Navbar from '@/components/navbar'
-import WelcomeScreen from '@/components/welcome-screen'
+import Navbar from '@/components/layout/navbar'
+import WelcomeScreen from '@/components/home/welcome-screen'
 
 export default function Home() {
   return (
