@@ -1,5 +1,6 @@
 // src/lib/openai.ts
 import OpenAI from 'openai';
+import { toFile } from 'openai/uploads';
 
 // Initialize the OpenAI client
 const openai = new OpenAI({
@@ -87,14 +88,9 @@ export async function runAssistant(threadId: string, systemPrompt?: string) {
 /**
  * Upload a file to OpenAI for use with assistants
  */
-export async function uploadFile(file: File | Buffer | NodeJS.ReadableStream, fileName: string) {
-  // Convert Buffer to File-like object if needed
-  let fileToUpload: File | Buffer | NodeJS.ReadableStream = file;
-  
-  if (Buffer.isBuffer(file)) {
-    // Create a File-like object from Buffer
-    fileToUpload = new File([file], fileName, { type: 'application/octet-stream' });
-  }
+export async function uploadFile(file: Buffer | Blob | File, fileName: string) {
+  // Use OpenAI's toFile helper to ensure proper type
+  const fileToUpload = await toFile(file, fileName);
 
   const uploadedFile = await openai.files.create({
     file: fileToUpload,
@@ -134,14 +130,15 @@ export async function getAssistant() {
 
 /**
  * Update assistant with file IDs
+ * Note: In the latest OpenAI API, files are attached to messages, not assistants
  */
 export async function updateAssistantFiles(fileIds: string[]) {
   if (!assistantId) {
     throw new Error('Assistant ID is not configured in environment variables');
   }
   
-  const assistant = await openai.beta.assistants.update(assistantId, {
-    file_ids: fileIds,
-  });
+  // In the new API, files are attached to messages rather than assistants
+  // Return the assistant details instead
+  const assistant = await openai.beta.assistants.retrieve(assistantId);
   return assistant;
 }
