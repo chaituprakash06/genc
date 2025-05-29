@@ -16,7 +16,8 @@ export default function DocumentList({ disputeId, onDocumentChange }: DocumentLi
   const [documents, setDocuments] = useState<Document[]>([])
 
   useEffect(() => {
-    loadDocuments()
+    const docs = DisputeService.getDocuments(disputeId)
+    setDocuments(docs)
   }, [disputeId])
 
   const loadDocuments = () => {

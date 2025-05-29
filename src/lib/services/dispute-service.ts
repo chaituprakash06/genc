@@ -44,7 +44,7 @@ export class DisputeService {
     const saved = localStorage.getItem(this.DISPUTES_KEY)
     if (!saved) return []
     
-    return JSON.parse(saved).map((d: any) => ({
+    return JSON.parse(saved).map((d: Dispute) => ({
       ...d,
       createdAt: new Date(d.createdAt),
       lastModified: new Date(d.lastModified)
@@ -83,7 +83,7 @@ export class DisputeService {
     const saved = localStorage.getItem(this.DOCUMENTS_KEY)
     if (!saved) return []
     
-    const allDocs = JSON.parse(saved).map((d: any) => ({
+    const allDocs = JSON.parse(saved).map((d: Document) => ({
       ...d,
       uploadedAt: new Date(d.uploadedAt)
     }))
@@ -110,7 +110,7 @@ export class DisputeService {
     const saved = localStorage.getItem(this.DOCUMENTS_KEY)
     if (!saved) return
     
-    const documents = JSON.parse(saved).filter((d: any) => d.id !== id)
+    const documents = JSON.parse(saved).filter((d: Document) => d.id !== id)
     localStorage.setItem(this.DOCUMENTS_KEY, JSON.stringify(documents))
     
     // Update dispute document count
@@ -126,7 +126,7 @@ export class DisputeService {
     const saved = localStorage.getItem(this.DOCUMENTS_KEY)
     if (!saved) return
     
-    const documents = JSON.parse(saved).filter((d: any) => d.disputeId !== disputeId)
+    const documents = JSON.parse(saved).filter((d: Document) => d.disputeId !== disputeId)
     localStorage.setItem(this.DOCUMENTS_KEY, JSON.stringify(documents))
   }
 
@@ -135,7 +135,7 @@ export class DisputeService {
     const saved = localStorage.getItem(this.REPORTS_KEY)
     if (!saved) return []
     
-    const allReports = JSON.parse(saved).map((r: any) => ({
+    const allReports = JSON.parse(saved).map((r: Report) => ({
       ...r,
       createdAt: new Date(r.createdAt)
     }))
@@ -162,7 +162,7 @@ export class DisputeService {
     const saved = localStorage.getItem(this.REPORTS_KEY)
     if (!saved) return
     
-    const reports = JSON.parse(saved).filter((r: any) => r.disputeId !== disputeId)
+    const reports = JSON.parse(saved).filter((r: Report) => r.disputeId !== disputeId)
     localStorage.setItem(this.REPORTS_KEY, JSON.stringify(reports))
   }
 }

@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Plus, FolderOpen, Clock, AlertCircle } from 'lucide-react'
+import { Plus, FolderOpen, Clock } from 'lucide-react'
 import { DisputeService, Dispute } from '@/lib/services/dispute-service'
 
 export default function WelcomeScreen() {

@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Combine document contents
-    const documentContent = documents.map((doc: any) => 
+    const documentContent = documents.map((doc: { name: string; content: string }) => 
       `Document: ${doc.name}\nContent: ${doc.content}`
     ).join('\n\n---\n\n')
 

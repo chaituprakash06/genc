@@ -2,13 +2,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import Navbar from '@/components/layout/navbar'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ArrowLeft, Upload, FileText, Brain, MessageSquare, Edit, Loader2 } from 'lucide-react'
+import { ArrowLeft, Upload, Brain, MessageSquare, Loader2 } from 'lucide-react'
 import { DisputeService, Dispute, Report } from '@/lib/services/dispute-service'
 import DocumentUpload from '@/components/disputes/document-upload'
 import DocumentList from '@/components/disputes/document-list'
@@ -16,7 +16,6 @@ import ReportViewer from '@/components/disputes/report-viewer'
 
 export default function DisputeDetailPage() {
   const params = useParams()
-  const router = useRouter()
   const [dispute, setDispute] = useState<Dispute | null>(null)
   const [activeTab, setActiveTab] = useState('overview')
   const [reports, setReports] = useState<Report[]>([])
@@ -24,22 +23,26 @@ export default function DisputeDetailPage() {
   const [selectedReport, setSelectedReport] = useState<Report | null>(null)
 
   useEffect(() => {
-    loadDispute()
-  }, [params.id])
-
-  const loadDispute = () => {
     const found = DisputeService.getDispute(params.id as string)
     if (found) {
       setDispute(found)
-      loadReports()
+      const disputeReports = DisputeService.getReports(params.id as string)
+      setReports(disputeReports)
+      if (disputeReports.length > 0 && !selectedReport) {
+        setSelectedReport(disputeReports[0])
+      }
     }
-  }
+  }, [params.id, selectedReport])
 
-  const loadReports = () => {
-    const disputeReports = DisputeService.getReports(params.id as string)
-    setReports(disputeReports)
-    if (disputeReports.length > 0 && !selectedReport) {
-      setSelectedReport(disputeReports[0])
+  const refreshData = () => {
+    const found = DisputeService.getDispute(params.id as string)
+    if (found) {
+      setDispute(found)
+      const disputeReports = DisputeService.getReports(params.id as string)
+      setReports(disputeReports)
+      if (disputeReports.length > 0) {
+        setSelectedReport(disputeReports[0])
+      }
     }
   }
 
@@ -75,8 +78,7 @@ export default function DisputeDetailPage() {
       
       // Save the report
       DisputeService.saveReport(report)
-      loadReports()
-      setSelectedReport(report)
+      refreshData()
       
     } catch (error) {
       console.error('Error generating report:', error)
@@ -254,13 +256,13 @@ export default function DisputeDetailPage() {
                 <CardContent className="space-y-6">
                   <DocumentUpload 
                     disputeId={dispute.id} 
-                    onUploadComplete={loadDispute}
+                    onUploadComplete={refreshData}
                   />
                   <div className="border-t pt-6">
                     <h3 className="font-semibold mb-4">Uploaded Documents</h3>
                     <DocumentList 
                       disputeId={dispute.id}
-                      onDocumentChange={loadDispute}
+                      onDocumentChange={refreshData}
                     />
                   </div>
                 </CardContent>
