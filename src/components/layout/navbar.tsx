@@ -1,20 +1,19 @@
-// components/navbar.tsx
+// components/layout/navbar.tsx
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'  // Add this line
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { Home, FolderOpen, User, MessageSquare } from 'lucide-react'
 
 export default function Navbar() {
   const pathname = usePathname()
 
   const navItems = [
-    { href: '/', label: 'Home' },
-    { href: '/project/my_docs', label: 'My Docs' },
-    { href: '/project/ai_report', label: 'AI Report' },
-    { href: '/project/profile', label: 'Profile' },
+    { href: '/', label: 'Home', icon: Home },
+    { href: '/disputes', label: 'Disputes', icon: FolderOpen },
   ]
 
   return (
@@ -37,21 +36,28 @@ export default function Navbar() {
             </Link>
             
             <div className="hidden md:flex items-center space-x-1">
-              {navItems.map((item) => (
-                <Link key={item.href} href={item.href}>
-                  <Button
-                    variant={pathname === item.href ? 'default' : 'ghost'}
-                    className={cn(
-                      'px-4',
-                      pathname === item.href
-                        ? ''
-                        : 'text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white'
-                    )}
-                  >
-                    {item.label}
-                  </Button>
-                </Link>
-              ))}
+              {navItems.map((item) => {
+                const Icon = item.icon
+                const isActive = pathname === item.href || 
+                  (item.href === '/disputes' && pathname.startsWith('/disputes'))
+                
+                return (
+                  <Link key={item.href} href={item.href}>
+                    <Button
+                      variant={isActive ? 'default' : 'ghost'}
+                      className={cn(
+                        'px-4',
+                        isActive
+                          ? ''
+                          : 'text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white'
+                      )}
+                    >
+                      <Icon className="w-4 h-4 mr-2" />
+                      {item.label}
+                    </Button>
+                  </Link>
+                )
+              })}
             </div>
           </div>
 
