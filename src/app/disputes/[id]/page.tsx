@@ -8,43 +8,83 @@ import Navbar from '@/components/layout/navbar'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ArrowLeft, Upload, FileText, Brain, MessageSquare } from 'lucide-react'
-
-interface Dispute {
-  id: string
-  title: string
-  description: string
-  createdAt: Date
-  lastModified: Date
-  status: 'active' | 'resolved' | 'pending'
-  documentCount: number
-  reportCount: number
-  disputeType?: string
-  opposingParty?: string
-  disputeValue?: string
-  urgency?: string
-}
+import { ArrowLeft, Upload, FileText, Brain, MessageSquare, Edit, Loader2 } from 'lucide-react'
+import { DisputeService, Dispute, Report } from '@/lib/services/dispute-service'
+import DocumentUpload from '@/components/disputes/document-upload'
+import DocumentList from '@/components/disputes/document-list'
+import ReportViewer from '@/components/disputes/report-viewer'
 
 export default function DisputeDetailPage() {
   const params = useParams()
+  const router = useRouter()
   const [dispute, setDispute] = useState<Dispute | null>(null)
   const [activeTab, setActiveTab] = useState('overview')
+  const [reports, setReports] = useState<Report[]>([])
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [selectedReport, setSelectedReport] = useState<Report | null>(null)
 
   useEffect(() => {
-    // Load dispute from localStorage
-    const savedDisputes = localStorage.getItem('disputes')
-    if (savedDisputes) {
-      const disputes = JSON.parse(savedDisputes)
-      const found = disputes.find((d: any) => d.id === params.id)
-      if (found) {
-        setDispute({
-          ...found,
-          createdAt: new Date(found.createdAt),
-          lastModified: new Date(found.lastModified)
-        })
-      }
-    }
+    loadDispute()
   }, [params.id])
+
+  const loadDispute = () => {
+    const found = DisputeService.getDispute(params.id as string)
+    if (found) {
+      setDispute(found)
+      loadReports()
+    }
+  }
+
+  const loadReports = () => {
+    const disputeReports = DisputeService.getReports(params.id as string)
+    setReports(disputeReports)
+    if (disputeReports.length > 0 && !selectedReport) {
+      setSelectedReport(disputeReports[0])
+    }
+  }
+
+  const handleGenerateReport = async () => {
+    if (!dispute) return
+
+    const documents = DisputeService.getDocuments(dispute.id)
+    if (documents.length === 0) {
+      alert('Please upload documents before generating a report')
+      setActiveTab('documents')
+      return
+    }
+
+    setIsGenerating(true)
+    
+    try {
+      const response = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          documents: documents,
+          disputeDetails: dispute
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to generate report')
+      }
+
+      const { report } = await response.json()
+      
+      // Save the report
+      DisputeService.saveReport(report)
+      loadReports()
+      setSelectedReport(report)
+      
+    } catch (error) {
+      console.error('Error generating report:', error)
+      alert('Failed to generate report. Please try again.')
+    } finally {
+      setIsGenerating(false)
+    }
+  }
 
   if (!dispute) {
     return (
@@ -129,8 +169,12 @@ export default function DisputeDetailPage() {
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList>
               <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="documents">Documents</TabsTrigger>
-              <TabsTrigger value="analysis">AI Analysis</TabsTrigger>
+              <TabsTrigger value="documents">
+                Documents {dispute.documentCount > 0 && `(${dispute.documentCount})`}
+              </TabsTrigger>
+              <TabsTrigger value="analysis">
+                AI Analysis {dispute.reportCount > 0 && `(${dispute.reportCount})`}
+              </TabsTrigger>
               <TabsTrigger value="chat">Chat</TabsTrigger>
             </TabsList>
 
@@ -205,19 +249,19 @@ export default function DisputeDetailPage() {
             <TabsContent value="documents">
               <Card>
                 <CardHeader>
-                  <div className="flex justify-between items-center">
-                    <CardTitle>Documents</CardTitle>
-                    <Button>
-                      <Upload className="w-4 h-4 mr-2" />
-                      Upload Document
-                    </Button>
-                  </div>
+                  <CardTitle>Documents</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="text-center py-12 text-gray-500">
-                    <FileText className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                    <p>No documents uploaded yet</p>
-                    <p className="text-sm mt-2">Upload contracts, emails, and other relevant files</p>
+                <CardContent className="space-y-6">
+                  <DocumentUpload 
+                    disputeId={dispute.id} 
+                    onUploadComplete={loadDispute}
+                  />
+                  <div className="border-t pt-6">
+                    <h3 className="font-semibold mb-4">Uploaded Documents</h3>
+                    <DocumentList 
+                      disputeId={dispute.id}
+                      onDocumentChange={loadDispute}
+                    />
                   </div>
                 </CardContent>
               </Card>
@@ -228,18 +272,52 @@ export default function DisputeDetailPage() {
                 <CardHeader>
                   <div className="flex justify-between items-center">
                     <CardTitle>AI Analysis</CardTitle>
-                    <Button>
-                      <Brain className="w-4 h-4 mr-2" />
-                      Generate Report
+                    <Button 
+                      onClick={handleGenerateReport}
+                      disabled={isGenerating}
+                    >
+                      {isGenerating ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <Brain className="w-4 h-4 mr-2" />
+                          Generate Report
+                        </>
+                      )}
                     </Button>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-center py-12 text-gray-500">
-                    <Brain className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                    <p>No analysis generated yet</p>
-                    <p className="text-sm mt-2">Upload documents first, then generate AI analysis</p>
-                  </div>
+                  {reports.length === 0 ? (
+                    <div className="text-center py-12 text-gray-500">
+                      <Brain className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                      <p>No analysis generated yet</p>
+                      <p className="text-sm mt-2">Upload documents first, then generate AI analysis</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {reports.length > 1 && (
+                        <div className="flex gap-2 flex-wrap">
+                          {reports.map((report, index) => (
+                            <Button
+                              key={report.id}
+                              variant={selectedReport?.id === report.id ? 'default' : 'outline'}
+                              size="sm"
+                              onClick={() => setSelectedReport(report)}
+                            >
+                              Report {index + 1}
+                            </Button>
+                          ))}
+                        </div>
+                      )}
+                      {selectedReport && (
+                        <ReportViewer report={selectedReport} />
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>

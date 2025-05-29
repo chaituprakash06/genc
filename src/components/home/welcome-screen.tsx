@@ -5,34 +5,20 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Plus, FolderOpen, Clock } from 'lucide-react'
-
-interface Dispute {
-  id: string
-  title: string
-  description: string
-  createdAt: Date
-  lastModified: Date
-  status: 'active' | 'resolved' | 'pending'
-  documentCount: number
-  reportCount: number
-}
+import { Plus, FolderOpen, Clock, AlertCircle } from 'lucide-react'
+import { DisputeService, Dispute } from '@/lib/services/dispute-service'
 
 export default function WelcomeScreen() {
   const [disputes, setDisputes] = useState<Dispute[]>([])
 
   useEffect(() => {
-    // Load disputes from localStorage
-    const savedDisputes = localStorage.getItem('disputes')
-    if (savedDisputes) {
-      const parsed = JSON.parse(savedDisputes)
-      setDisputes(parsed.map((d: any) => ({
-        ...d,
-        createdAt: new Date(d.createdAt),
-        lastModified: new Date(d.lastModified)
-      })))
-    }
+    loadDisputes()
   }, [])
+
+  const loadDisputes = () => {
+    const allDisputes = DisputeService.getDisputes()
+    setDisputes(allDisputes)
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {

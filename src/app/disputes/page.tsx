@@ -14,17 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-
-interface Dispute {
-  id: string
-  title: string
-  description: string
-  createdAt: Date
-  lastModified: Date
-  status: 'active' | 'resolved' | 'pending'
-  documentCount: number
-  reportCount: number
-}
+import { DisputeService, Dispute } from '@/lib/services/dispute-service'
 
 export default function DisputesPage() {
   const [disputes, setDisputes] = useState<Dispute[]>([])
@@ -32,30 +22,27 @@ export default function DisputesPage() {
   const router = useRouter()
 
   useEffect(() => {
-    // Load disputes from localStorage
-    const savedDisputes = localStorage.getItem('disputes')
-    if (savedDisputes) {
-      const parsed = JSON.parse(savedDisputes)
-      setDisputes(parsed.map((d: any) => ({
-        ...d,
-        createdAt: new Date(d.createdAt),
-        lastModified: new Date(d.lastModified)
-      })))
-    }
+    loadDisputes()
   }, [])
 
+  const loadDisputes = () => {
+    const allDisputes = DisputeService.getDisputes()
+    setDisputes(allDisputes)
+  }
+
   const handleDelete = (id: string) => {
-    const updated = disputes.filter(d => d.id !== id)
-    setDisputes(updated)
-    localStorage.setItem('disputes', JSON.stringify(updated))
+    DisputeService.deleteDispute(id)
+    loadDisputes()
   }
 
   const handleStatusChange = (id: string, status: 'active' | 'resolved' | 'pending') => {
-    const updated = disputes.map(d => 
-      d.id === id ? { ...d, status, lastModified: new Date() } : d
-    )
-    setDisputes(updated)
-    localStorage.setItem('disputes', JSON.stringify(updated))
+    const dispute = DisputeService.getDispute(id)
+    if (dispute) {
+      dispute.status = status
+      dispute.lastModified = new Date()
+      DisputeService.saveDispute(dispute)
+      loadDisputes()
+    }
   }
 
   const filteredDisputes = filter === 'all' 

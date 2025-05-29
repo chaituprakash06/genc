@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/select'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
+import { DisputeService, Dispute } from '@/lib/services/dispute-service'
 
 export default function NewDisputePage() {
   const router = useRouter()
@@ -34,13 +35,13 @@ export default function NewDisputePage() {
     e.preventDefault()
     
     // Create new dispute
-    const newDispute = {
+    const newDispute: Dispute = {
       id: Date.now().toString(),
       title: formData.title,
       description: formData.description,
       createdAt: new Date(),
       lastModified: new Date(),
-      status: 'active' as const,
+      status: 'active',
       documentCount: 0,
       reportCount: 0,
       disputeType: formData.disputeType,
@@ -49,11 +50,8 @@ export default function NewDisputePage() {
       urgency: formData.urgency,
     }
 
-    // Save to localStorage
-    const existingDisputes = localStorage.getItem('disputes')
-    const disputes = existingDisputes ? JSON.parse(existingDisputes) : []
-    disputes.push(newDispute)
-    localStorage.setItem('disputes', JSON.stringify(disputes))
+    // Save using the service
+    DisputeService.saveDispute(newDispute)
 
     // Redirect to dispute detail page
     router.push(`/disputes/${newDispute.id}`)
