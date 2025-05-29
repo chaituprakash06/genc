@@ -8,7 +8,7 @@ import Navbar from '@/components/layout/navbar'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ArrowLeft, Upload, FileText, Brain, MessageSquare, Edit } from 'lucide-react'
+import { ArrowLeft, Upload, FileText, Brain, MessageSquare } from 'lucide-react'
 
 interface Dispute {
   id: string
@@ -27,7 +27,6 @@ interface Dispute {
 
 export default function DisputeDetailPage() {
   const params = useParams()
-  const router = useRouter()
   const [dispute, setDispute] = useState<Dispute | null>(null)
   const [activeTab, setActiveTab] = useState('overview')
 

@@ -6,7 +6,7 @@ import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { Home, FolderOpen, User, MessageSquare } from 'lucide-react'
+import { Home, FolderOpen } from 'lucide-react'
 
 export default function Navbar() {
   const pathname = usePathname()
