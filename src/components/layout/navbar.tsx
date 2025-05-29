@@ -2,6 +2,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'  // Add this line
 import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -22,8 +23,15 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center space-x-8">
             <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xl">G</span>
+              <div className="w-8 h-8 relative">
+                <Image 
+                  src="/logo.png"  // or "/logo.svg" if you're using SVG
+                  alt="GenC Logo"
+                  width={32}
+                  height={32}
+                  className="rounded-lg"  // Keeps the rounded corners like the original
+                  priority  // Loads the logo immediately
+                />
               </div>
               <span className="text-xl font-bold">GenC</span>
             </Link>
