@@ -13,6 +13,7 @@ import { DisputeService, Dispute, Report } from '@/lib/services/dispute-service'
 import DocumentUpload from '@/components/disputes/document-upload'
 import DocumentList from '@/components/disputes/document-list'
 import ReportViewer from '@/components/disputes/report-viewer'
+import DisputeChat from '@/components/disputes/dispute-chat'
 
 export default function DisputeDetailPage() {
   const params = useParams()
@@ -174,10 +175,10 @@ export default function DisputeDetailPage() {
               <TabsTrigger value="documents">
                 Documents {dispute.documentCount > 0 && `(${dispute.documentCount})`}
               </TabsTrigger>
+              <TabsTrigger value="chat">Chat</TabsTrigger>
               <TabsTrigger value="analysis">
                 AI Analysis {dispute.reportCount > 0 && `(${dispute.reportCount})`}
               </TabsTrigger>
-              <TabsTrigger value="chat">Chat</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="space-y-6">
@@ -230,6 +231,14 @@ export default function DisputeDetailPage() {
                   </CardContent>
                 </Card>
 
+                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab('chat')}>
+                  <CardContent className="pt-6 text-center">
+                    <MessageSquare className="w-8 h-8 mx-auto mb-2 text-green-600" />
+                    <h3 className="font-semibold">Chat with AI</h3>
+                    <p className="text-sm text-gray-600 mt-1">Ask questions about your case</p>
+                  </CardContent>
+                </Card>
+
                 <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab('analysis')}>
                   <CardContent className="pt-6 text-center">
                     <Brain className="w-8 h-8 mx-auto mb-2 text-purple-600" />
@@ -238,13 +247,6 @@ export default function DisputeDetailPage() {
                   </CardContent>
                 </Card>
 
-                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab('chat')}>
-                  <CardContent className="pt-6 text-center">
-                    <MessageSquare className="w-8 h-8 mx-auto mb-2 text-green-600" />
-                    <h3 className="font-semibold">Chat with AI</h3>
-                    <p className="text-sm text-gray-600 mt-1">Ask questions about your case</p>
-                  </CardContent>
-                </Card>
               </div>
             </TabsContent>
 
@@ -328,16 +330,12 @@ export default function DisputeDetailPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>AI Assistant Chat</CardTitle>
+                  <p className="text-sm text-gray-600">
+                    Ask questions about your dispute and get strategic advice based on proven negotiation tactics
+                  </p>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-center py-12 text-gray-500">
-                    <MessageSquare className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                    <p>Start a conversation with the AI assistant</p>
-                    <p className="text-sm mt-2">Ask questions about your dispute and get strategic advice</p>
-                    <Button className="mt-4">
-                      Start Chat
-                    </Button>
-                  </div>
+                  <DisputeChat dispute={dispute} />
                 </CardContent>
               </Card>
             </TabsContent>
