@@ -22,9 +22,16 @@ interface AddKnowledgeResult {
   error?: string;
 }
 
+interface SearchResult {
+  content: string;
+  similarity: number;
+  source: string;
+  page: number;
+}
+
 interface SearchKnowledgeResult {
   success: boolean;
-  results: any[];
+  results: SearchResult[];
   error?: string;
 }
 
@@ -61,18 +68,20 @@ export const addKnowledge = async (entry: KnowledgeEntry): Promise<AddKnowledgeR
     if (chunkError) throw chunkError;
 
     return { success: true, documentId: doc.id, chunks: chunks.length };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error adding knowledge:', error);
-    return { success: false, error: error.message };
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    return { success: false, error: errorMessage };
   }
 };
 
-export const searchKnowledge = async (query: string, limit: number = 5): Promise<SearchKnowledgeResult> => {
+export const searchKnowledge = async (query: string): Promise<SearchKnowledgeResult> => {
   try {
     const results = await findRelevantContent(query);
     return { success: true, results };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error searching knowledge:', error);
-    return { success: false, error: error.message, results: [] };
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    return { success: false, error: errorMessage, results: [] };
   }
 };

@@ -70,10 +70,10 @@ export const findRelevantContent = async (userQuery: string): Promise<SearchResu
     return [];
   }
 
-  return data.map((item: any) => ({
+  return data.map((item: SearchResult) => ({
     content: item.content,
     similarity: item.similarity,
-    source: item.document_title,
-    page: item.page_number
+    source: item.source,
+    page: item.page
   }));
 };
