@@ -82,34 +82,70 @@ export async function POST(request: NextRequest) {
     }
 
     // System prompt
-    const systemPrompt = `You are an expert legal analyst specializing in dispute resolution and contract negotiation. 
+    const systemPrompt = `You are a general counsel and master negotiation strategist. Your mission is to analyze the provided documentation and create a strategic playbook that will give your client decisive advantages in their upcoming negotiations.
 
-${typedResults && typedResults.length > 0 ? 'Use the provided negotiation strategies from the knowledge base to support your recommendations. Cite sources using [1], [2], etc.' : ''}
+${typedResults && typedResults.length > 0 ? 'Leverage the negotiation strategies and game theory principles from the knowledge base. Cite specific tactics using [1], [2], etc.' : ''}
 
-Analyze the provided documents and dispute details to create a comprehensive report that includes:
-1. Executive Summary
-2. Key Issues Identified
-3. Strengths of Your Position
-4. Potential Weaknesses
-5. Recommended Negotiation Strategy
-6. Risk Assessment
-7. Suggested Next Steps
+Your analysis must focus on creating leverage and gaining the upper hand. Think like a chess grandmaster - several moves ahead.`
 
-Focus on practical, actionable advice that can strengthen the negotiating position.`
+    const userPrompt = `I need your strategic analysis to dominate this negotiation:
 
-    const userPrompt = `Dispute Details:
+DISPUTE OVERVIEW:
 Title: ${disputeDetails.title}
 Description: ${disputeDetails.description}
 Type: ${disputeDetails.disputeType || 'General'}
-Opposing Party: ${disputeDetails.opposingParty || 'Not specified'}
-Estimated Value: ${disputeDetails.disputeValue ? `$${disputeDetails.disputeValue}` : 'Not specified'}
-Urgency: ${disputeDetails.urgency || 'Medium'}
+Opposing Party: ${disputeDetails.opposingParty || 'Not specified'} (${disputeDetails.opposingParty?.toLowerCase().includes('inc') || disputeDetails.opposingParty?.toLowerCase().includes('llc') || disputeDetails.opposingParty?.toLowerCase().includes('corp') ? 'Corporate Entity' : 'Individual/Unknown'})
+Stakes: ${disputeDetails.disputeValue ? `${disputeDetails.disputeValue}` : 'Not specified'}
+Time Pressure: ${disputeDetails.urgency || 'Medium'}
 
-Documents:
+DOCUMENTATION PROVIDED:
 ${documentContent}
+
+STRATEGIC INTELLIGENCE:
 ${ragContext}
 
-Please analyze this dispute and provide a comprehensive strategic report.`
+Create a comprehensive strategic report with these sections:
+
+1. POWER DYNAMICS ASSESSMENT
+   - Who currently has leverage and why
+   - Hidden leverage points we can create or exploit
+   - Opposing party's likely pressure points and weaknesses
+
+2. GAME THEORY ANALYSIS
+   - Best Alternative to Negotiated Agreement (BATNA) for both sides
+   - Zone of Possible Agreement (ZOPA)
+   - Nash equilibrium considerations
+   - Information asymmetries we can exploit
+
+3. PSYCHOLOGICAL WARFARE TACTICS
+   - How to frame the negotiation to our advantage
+   - Emotional triggers and cognitive biases to leverage
+   - Power moves and strategic demonstrations
+
+4. NEGOTIATION CHOREOGRAPHY
+   - Optimal sequence of moves and counter-moves
+   - When to be aggressive vs. collaborative
+   - Specific phrases and language to use for maximum impact
+   - Timing strategies (when to push, when to wait)
+
+5. OFFENSIVE STRATEGIES
+   - How to put the opposing party on the defensive
+   - Creating urgency and scarcity
+   - Using silence, delays, and other tactical tools
+   - Coalition building and third-party leverage
+
+6. DEFENSIVE PREPARATIONS
+   - Anticipating their tactics and preparing counters
+   - Protecting our vulnerabilities
+   - Maintaining optionality and flexibility
+
+7. VICTORY CONDITIONS & EXECUTION PLAN
+   - Clear definition of winning outcomes (in order of preference)
+   - Red lines and walk-away points
+   - Specific action items for next 48 hours
+   - Contingency plans for various scenarios
+
+Remember: This is not about fair compromise - it's about maximizing our client's outcome and gaining the upper hand. Be ruthlessly strategic.`
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
