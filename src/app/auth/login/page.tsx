@@ -28,7 +28,7 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
@@ -41,7 +41,7 @@ export default function LoginPage() {
 
       router.push(redirectTo)
       router.refresh()
-    } catch (err) {
+    } catch {
       setError('An unexpected error occurred')
       setLoading(false)
     }
@@ -52,7 +52,7 @@ export default function LoginPage() {
     setLoading(true)
     
     try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
           redirectTo: `${location.origin}/auth/callback?next=${redirectTo}`,
@@ -63,7 +63,7 @@ export default function LoginPage() {
         setError(error.message)
         setLoading(false)
       }
-    } catch (err) {
+    } catch {
       setError('An unexpected error occurred')
       setLoading(false)
     }
@@ -165,7 +165,7 @@ export default function LoginPage() {
       </CardContent>
       <CardFooter>
         <p className="text-sm text-muted-foreground text-center w-full">
-          Don't have an account?{' '}
+          Don&apos;t have an account?{' '}
           <Link 
             href="/auth/signup" 
             className="text-primary hover:underline font-medium"

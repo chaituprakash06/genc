@@ -69,7 +69,7 @@ export default function SignupPage() {
 
       setSuccess(true)
       setLoading(false)
-    } catch (err) {
+    } catch {
       setError('An unexpected error occurred')
       setLoading(false)
     }
@@ -80,7 +80,7 @@ export default function SignupPage() {
     setLoading(true)
     
     try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
           redirectTo: `${location.origin}/auth/callback`,
@@ -91,7 +91,7 @@ export default function SignupPage() {
         setError(error.message)
         setLoading(false)
       }
-    } catch (err) {
+    } catch {
       setError('An unexpected error occurred')
       setLoading(false)
     }
@@ -106,7 +106,7 @@ export default function SignupPage() {
           </div>
           <CardTitle className="text-2xl">Check your email</CardTitle>
           <CardDescription>
-            We've sent a verification link to{' '}
+            We&apos;ve sent a verification link to{' '}
             <span className="font-medium text-foreground">{email}</span>
           </CardDescription>
         </CardHeader>
