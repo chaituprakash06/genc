@@ -1,7 +1,7 @@
 // app/disputes/[id]/page.tsx
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import Navbar from '@/components/layout/navbar'
@@ -31,9 +31,9 @@ export default function DisputeDetailPage() {
 
   useEffect(() => {
     loadDispute()
-  }, [params.id])
+  }, [loadDispute])
 
-  const loadDispute = async () => {
+  const loadDispute = useCallback(async () => {
     setLoading(true)
     try {
       const data = await DisputeService.getDisputeWithDetails(params.id as string)
@@ -48,7 +48,7 @@ export default function DisputeDetailPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [params.id, selectedReport])
 
   const handleGenerateReport = async () => {
     if (!dispute) return

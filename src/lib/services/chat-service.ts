@@ -1,6 +1,6 @@
 // lib/services/chat-service.ts
 import { createClient } from '@/lib/supabase-browser'
-import { Database } from '@/lib/database.types'
+import { Database, Json } from '@/lib/database.types'
 import { RealtimeChannel } from '@supabase/supabase-js'
 
 type ChatMessage = Database['public']['Tables']['chat_messages']['Row']

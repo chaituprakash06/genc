@@ -1,7 +1,7 @@
 // components/disputes/document-list.tsx
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { FileText, Download, Trash2, Clock, Loader2 } from 'lucide-react'
@@ -27,7 +27,7 @@ export default function DocumentList({ disputeId, documents: propDocuments, onDo
     if (!propDocuments) {
       loadDocuments()
     }
-  }, [disputeId, propDocuments])
+  }, [propDocuments, loadDocuments])
 
   useEffect(() => {
     if (propDocuments) {
@@ -35,7 +35,7 @@ export default function DocumentList({ disputeId, documents: propDocuments, onDo
     }
   }, [propDocuments])
 
-  const loadDocuments = async () => {
+  const loadDocuments = useCallback(async () => {
     setLoading(true)
     try {
       const docs = await DisputeService.getDocuments(disputeId)
@@ -45,7 +45,7 @@ export default function DocumentList({ disputeId, documents: propDocuments, onDo
     } finally {
       setLoading(false)
     }
-  }
+  }, [disputeId])
 
   const handleDelete = async (docId: string) => {
     setDeletingId(docId)
