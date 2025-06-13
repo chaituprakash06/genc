@@ -243,9 +243,13 @@ export default function DisputeChat({ dispute }: DisputeChatProps) {
                 >
                   {message.role === 'user' ? (
                     <User className="w-5 h-5" />
-                  ) : (
-                    <Bot className="w-5 h-5" />
-                  )}
+                    ) : (
+                    <img 
+                        src="/robot-avatar.png"  // Replace with your PNG file path
+                        alt="AI Assistant"
+                        className="w-5 h-5 object-cover"
+                    />
+                    )}
                 </div>
 
                 {/* Message Content */}
@@ -302,9 +306,13 @@ export default function DisputeChat({ dispute }: DisputeChatProps) {
         {isLoading && (
           <div className="flex justify-start">
             <div className="flex gap-3">
-              <div className="w-8 h-8 rounded-full bg-purple-500 text-white flex items-center justify-center">
-                <Bot className="w-5 h-5" />
-              </div>
+              <div className="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center overflow-hidden">
+                <img 
+                    src="/robot-avatar.png"  // Same PNG file path
+                    alt="AI Assistant"
+                    className="w-8 h-8 object-cover"
+                />
+                </div>
               <div className="bg-gray-100 dark:bg-gray-800 rounded-lg px-4 py-2">
                 <Loader2 className="w-4 h-4 animate-spin" />
               </div>
