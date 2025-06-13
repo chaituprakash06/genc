@@ -2,13 +2,19 @@
 import { createClient } from '@/lib/supabase-browser'
 import { Database } from '@/lib/database.types'
 
-type Dispute = Database['public']['Tables']['disputes']['Row']
-type Document = Database['public']['Tables']['user_documents']['Row']
-type Report = Database['public']['Tables']['dispute_reports']['Row']
+// Export these types so they can be imported elsewhere
+export type Dispute = Database['public']['Tables']['disputes']['Row']
+export type Document = Database['public']['Tables']['user_documents']['Row']
+export type Report = Database['public']['Tables']['dispute_reports']['Row']
+
+// You can also export Insert and Update types if needed elsewhere
+export type DisputeInsert = Database['public']['Tables']['disputes']['Insert']
+export type DisputeUpdate = Database['public']['Tables']['disputes']['Update']
+export type DocumentInsert = Database['public']['Tables']['user_documents']['Insert']
+export type ReportInsert = Database['public']['Tables']['dispute_reports']['Insert']
 
 export class DisputeService {
   private static supabase = createClient()
-
   // Dispute methods
   static async getDisputes(): Promise<Dispute[]> {
     const { data, error } = await this.supabase
