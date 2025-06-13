@@ -11,17 +11,26 @@ interface ReportViewerProps {
   report: Report
 }
 
+// Define a type for parsed JSON content
+type ParsedContent = string | string[] | Record<string, unknown> | null
+
 export default function ReportViewer({ report }: ReportViewerProps) {
   // Helper function to safely parse JSON fields
-  const parseJsonField = (field: Json): any => {
+  const parseJsonField = (field: Json): ParsedContent => {
     if (typeof field === 'string') {
       try {
-        return JSON.parse(field)
+        return JSON.parse(field) as ParsedContent
       } catch {
         return field
       }
     }
-    return field
+    if (Array.isArray(field)) {
+      return field as string[]
+    }
+    if (typeof field === 'object' && field !== null) {
+      return field as Record<string, unknown>
+    }
+    return String(field)
   }
 
   // Format the report content for display/download
@@ -94,7 +103,7 @@ export default function ReportViewer({ report }: ReportViewerProps) {
       )
     }
     
-    if (typeof parsed === 'object' && parsed !== null) {
+    if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
       return (
         <div className="mb-6">
           <h3 className="text-lg font-semibold mb-2">{title}</h3>
