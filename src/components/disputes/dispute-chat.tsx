@@ -242,14 +242,14 @@ export default function DisputeChat({ dispute }: DisputeChatProps) {
                   }`}
                 >
                   {message.role === 'user' ? (
-                    <User className="w-5 h-5" />
-                    ) : (
-                    <img 
-                        src="/robot-avatar.png"  // Replace with your PNG file path
-                        alt="AI Assistant"
-                        className="w-5 h-5 object-cover"
-                    />
-                    )}
+                <User className="w-5 h-5" />
+                ) : (
+                <img 
+                    src="/your-robot-avatar.png"
+                    alt="AI Assistant"
+                    className="w-full h-full object-cover rounded-full"  // Added rounded-full here
+                />
+                )}
                 </div>
 
                 {/* Message Content */}
@@ -306,11 +306,11 @@ export default function DisputeChat({ dispute }: DisputeChatProps) {
         {isLoading && (
           <div className="flex justify-start">
             <div className="flex gap-3">
-              <div className="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center overflow-hidden">
+              <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center">
                 <img 
-                    src="/robot-avatar.png"  // Same PNG file path
+                    src="/your-robot-avatar.png"
                     alt="AI Assistant"
-                    className="w-8 h-8 object-cover"
+                    className="w-full h-full object-cover"  // The parent's overflow-hidden will handle the circular crop
                 />
                 </div>
               <div className="bg-gray-100 dark:bg-gray-800 rounded-lg px-4 py-2">
