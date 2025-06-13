@@ -4,7 +4,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Send, Bot, User, Loader2, Book } from 'lucide-react'
+import { Send, User, Loader2, Book } from 'lucide-react'
 import { ChatService } from '@/lib/services/chat-service'
 import { Database, Json } from '@/lib/database.types'
 
