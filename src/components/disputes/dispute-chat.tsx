@@ -171,24 +171,42 @@ export default function DisputeChat({ dispute }: DisputeChatProps) {
   }
 
   const parseMessageSources = (sources: Json | null): MessageSource[] | null => {
-    if (!sources) return null
+  if (!sources) return null
+  
+  // Handle different source formats
+  if (Array.isArray(sources)) {
+    // Validate that each item in the array has the required properties
+    const isValidSourceArray = sources.every(
+      (item) => 
+        typeof item === 'object' && 
+        item !== null &&
+        'content' in item && 
+        'source' in item && 
+        'page' in item
+    )
     
-    // Handle different source formats
-    if (Array.isArray(sources)) {
+    if (isValidSourceArray) {
       return sources as MessageSource[]
     }
-    
-    // If sources is a JSON string
-    if (typeof sources === 'string') {
-      try {
-        return JSON.parse(sources) as MessageSource[]
-      } catch {
-        return null
-      }
-    }
-    
     return null
   }
+  
+  // If sources is a JSON string
+  if (typeof sources === 'string') {
+    try {
+      const parsed = JSON.parse(sources)
+      if (Array.isArray(parsed)) {
+        // Recursively call to validate the parsed array
+        return parseMessageSources(parsed)
+      }
+      return null
+    } catch {
+      return null
+    }
+  }
+  
+  return null
+}
 
   if (isInitializing) {
     return (
