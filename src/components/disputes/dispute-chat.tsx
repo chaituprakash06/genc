@@ -186,7 +186,7 @@ export default function DisputeChat({ dispute }: DisputeChatProps) {
     )
     
     if (isValidSourceArray) {
-      return sources as MessageSource[]
+        return sources as unknown as MessageSource[]
     }
     return null
   }
