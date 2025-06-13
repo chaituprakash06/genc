@@ -1,16 +1,22 @@
 // components/disputes/dispute-chat.tsx
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { MessageSquare, Send, Bot, User, Loader2, Book } from 'lucide-react'
+import { Send, Bot, User, Loader2, Book } from 'lucide-react'
 import { ChatService } from '@/lib/services/chat-service'
-import { Database } from '@/lib/database.types'
+import { Database, Json } from '@/lib/database.types'
 
 type Dispute = Database['public']['Tables']['disputes']['Row']
 type ChatMessage = Database['public']['Tables']['chat_messages']['Row']
 type ChatConversation = Database['public']['Tables']['chat_conversations']['Row']
+
+interface MessageSource {
+  content: string
+  source: string
+  page: number
+}
 
 interface DisputeChatProps {
   dispute: Dispute
@@ -26,21 +32,11 @@ export default function DisputeChat({ dispute }: DisputeChatProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const unsubscribeRef = useRef<(() => void) | null>(null)
 
-  useEffect(() => {
-    initializeChat()
-    
-    return () => {
-      if (unsubscribeRef.current) {
-        unsubscribeRef.current()
-      }
-    }
-  }, [dispute.id])
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }
 
-  useEffect(() => {
-    scrollToBottom()
-  }, [messages])
-
-  const initializeChat = async () => {
+  const initializeChat = useCallback(async () => {
     setIsInitializing(true)
     try {
       const conv = await ChatService.getOrCreateConversation(dispute.id)
@@ -100,11 +96,21 @@ export default function DisputeChat({ dispute }: DisputeChatProps) {
     } finally {
       setIsInitializing(false)
     }
-  }
+  }, [dispute.id, dispute.title])
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }
+  useEffect(() => {
+    initializeChat()
+    
+    return () => {
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current()
+      }
+    }
+  }, [initializeChat])
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -164,18 +170,18 @@ export default function DisputeChat({ dispute }: DisputeChatProps) {
     }
   }
 
-  const parseMessageSources = (sources: any) => {
+  const parseMessageSources = (sources: Json | null): MessageSource[] | null => {
     if (!sources) return null
     
     // Handle different source formats
     if (Array.isArray(sources)) {
-      return sources
+      return sources as MessageSource[]
     }
     
     // If sources is a JSON string
     if (typeof sources === 'string') {
       try {
-        return JSON.parse(sources)
+        return JSON.parse(sources) as MessageSource[]
       } catch {
         return null
       }
@@ -249,7 +255,7 @@ export default function DisputeChat({ dispute }: DisputeChatProps) {
                       
                       {showSources === message.id && (
                         <div className="mt-2 space-y-2">
-                          {sources.map((source: any, idx: number) => (
+                          {sources.map((source, idx) => (
                             <div key={idx} className="bg-gray-50 dark:bg-gray-900 rounded p-3 text-xs">
                               <div className="font-semibold text-gray-700 dark:text-gray-300 mb-1">
                                 {source.source} - Page {source.page}

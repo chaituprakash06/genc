@@ -84,7 +84,7 @@ export class ChatService {
     disputeId: string, 
     content: string, 
     role: 'user' | 'assistant',
-    sources?: any
+    sources?: Json
   ): Promise<ChatMessage | null> {
     const { data: { user } } = await this.supabase.auth.getUser()
     
