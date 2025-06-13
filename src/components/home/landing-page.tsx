@@ -12,33 +12,85 @@ import {
   Shield, 
   Zap,
   ArrowRight,
-  CheckCircle
+  CheckCircle,
+  PlayCircle
 } from 'lucide-react'
+import { useState, useEffect } from 'react'
 
 export default function LandingPage() {
+  const [videoLoaded, setVideoLoaded] = useState(false)
+
   return (
     <div className="w-full">
-      {/* Hero Section */}
-      <section className="container mx-auto px-4 py-16 md:py-24">
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            AI-Powered Dispute Resolution
-          </h1>
-          <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-400 mb-8">
-            Strengthen your negotiation position with strategic advice based on thousands of negotiation books and proven tactics
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/auth/signup">
-              <Button size="lg" className="min-w-[200px]">
-                Get Started Free
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
-            <Link href="/auth/login">
-              <Button size="lg" variant="outline" className="min-w-[200px]">
-                Sign In
-              </Button>
-            </Link>
+      {/* Hero Section with Video Background */}
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+        {/* Video Background */}
+        <div className="absolute inset-0 w-full h-full">
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            onLoadedData={() => setVideoLoaded(true)}
+            className={`absolute min-w-full min-h-full object-cover transition-opacity duration-1000 ${
+              videoLoaded ? 'opacity-100' : 'opacity-0'
+            }`}
+          >
+            <source src="/hero-video.mp4" type="video/mp4" />
+            {/* Fallback for browsers that don't support video */}
+            Your browser does not support the video tag.
+          </video>
+          
+          {/* Poster image shown while video loads */}
+          {!videoLoaded && (
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-900 to-purple-900" />
+          )}
+          
+          {/* Overlay to ensure text readability */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60" />
+        </div>
+
+        {/* Hero Content */}
+        <div className="relative z-10 container mx-auto px-4 py-16 md:py-24">
+          <div className="max-w-4xl mx-auto text-center text-white">
+            <h1 className="text-5xl md:text-7xl font-bold mb-6 animate-fade-in-up">
+              AI-Powered Dispute Resolution
+            </h1>
+            <p className="text-xl md:text-2xl mb-8 text-gray-200 animate-fade-in-up animation-delay-200">
+              Strengthen your negotiation position with strategic advice based on thousands of negotiation books and proven tactics
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-up animation-delay-400">
+              <Link href="/auth/signup">
+                <Button size="lg" className="min-w-[200px] bg-blue-600 hover:bg-blue-700 text-lg">
+                  Get Started Free
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </Link>
+              <Link href="/auth/login">
+                <Button 
+                  size="lg" 
+                  variant="outline" 
+                  className="min-w-[200px] bg-white/10 backdrop-blur border-white/20 text-white hover:bg-white/20 text-lg"
+                >
+                  Sign In
+                </Button>
+              </Link>
+            </div>
+            
+            {/* Optional: Add a play button for a demo video */}
+            <div className="mt-12 animate-fade-in-up animation-delay-600">
+              <button className="inline-flex items-center gap-2 text-white/80 hover:text-white transition-colors group">
+                <PlayCircle className="w-12 h-12 group-hover:scale-110 transition-transform" />
+                <span className="text-lg">Watch 2-min Demo</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Scroll indicator */}
+        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
+          <div className="w-6 h-10 border-2 border-white/50 rounded-full flex justify-center">
+            <div className="w-1 h-3 bg-white/50 rounded-full mt-2 animate-scroll" />
           </div>
         </div>
       </section>
