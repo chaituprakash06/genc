@@ -29,18 +29,14 @@ export default function DisputeDetailPage() {
   const [selectedReport, setSelectedReport] = useState<Database['public']['Tables']['dispute_reports']['Row'] | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    loadDispute()
-  }, [loadDispute])
-
   const loadDispute = useCallback(async () => {
     setLoading(true)
     try {
       const data = await DisputeService.getDisputeWithDetails(params.id as string)
       if (data) {
         setDispute(data)
-        if (data.reports && data.reports.length > 0 && !selectedReport) {
-          setSelectedReport(data.reports[0])
+        if (data.reports && data.reports.length > 0) {
+          setSelectedReport(prev => prev || data.reports[0])
         }
       }
     } catch (error) {
@@ -48,7 +44,11 @@ export default function DisputeDetailPage() {
     } finally {
       setLoading(false)
     }
-  }, [params.id, selectedReport])
+  }, [params.id])
+
+  useEffect(() => {
+    loadDispute()
+  }, [loadDispute])
 
   const handleGenerateReport = async () => {
     if (!dispute) return

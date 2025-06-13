@@ -23,18 +23,6 @@ export default function DocumentList({ disputeId, documents: propDocuments, onDo
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const supabase = createClient()
 
-  useEffect(() => {
-    if (!propDocuments) {
-      loadDocuments()
-    }
-  }, [propDocuments, loadDocuments])
-
-  useEffect(() => {
-    if (propDocuments) {
-      setDocuments(propDocuments)
-    }
-  }, [propDocuments])
-
   const loadDocuments = useCallback(async () => {
     setLoading(true)
     try {
@@ -46,6 +34,18 @@ export default function DocumentList({ disputeId, documents: propDocuments, onDo
       setLoading(false)
     }
   }, [disputeId])
+
+  useEffect(() => {
+    if (!propDocuments) {
+      loadDocuments()
+    }
+  }, [propDocuments, loadDocuments])
+
+  useEffect(() => {
+    if (propDocuments) {
+      setDocuments(propDocuments)
+    }
+  }, [propDocuments])
 
   const handleDelete = async (docId: string) => {
     setDeletingId(docId)

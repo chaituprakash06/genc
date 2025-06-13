@@ -142,7 +142,7 @@ export class ChatService {
           table: 'chat_messages',
           filter: `conversation_id=eq.${conversationId}`
         },
-        (payload) => {
+        (payload: any) => {
           onMessage(payload.new as ChatMessage)
         }
       )
