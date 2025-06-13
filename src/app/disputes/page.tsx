@@ -14,37 +14,57 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { DisputeService, Dispute } from '@/lib/services/dispute-service'
+import { DisputeService } from '@/lib/services/dispute-service'
+import { Database } from '@/lib/database.types'
+
+type Dispute = Database['public']['Tables']['disputes']['Row']
 
 export default function DisputesPage() {
   const [disputes, setDisputes] = useState<Dispute[]>([])
   const [filter, setFilter] = useState<'all' | 'active' | 'resolved' | 'pending'>('all')
+  const [loading, setLoading] = useState(true)
+  const [mounted, setMounted] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
-    loadDisputes()
+    setMounted(true)
   }, [])
 
-  const loadDisputes = () => {
-    const allDisputes = DisputeService.getDisputes()
-    setDisputes(allDisputes)
-  }
-
-  const handleDelete = (id: string) => {
-    DisputeService.deleteDispute(id)
-    loadDisputes()
-  }
-
-  const handleStatusChange = (id: string, status: 'active' | 'resolved' | 'pending') => {
-    const dispute = DisputeService.getDispute(id)
-    if (dispute) {
-      dispute.status = status
-      dispute.lastModified = new Date()
-      DisputeService.saveDispute(dispute)
+  useEffect(() => {
+    if (mounted) {
       loadDisputes()
+    }
+  }, [mounted])
+
+  const loadDisputes = async () => {
+    setLoading(true)
+    try {
+      const data = await DisputeService.getDisputes()
+      // Ensure data is always an array
+      setDisputes(Array.isArray(data) ? data : [])
+    } catch (error) {
+      console.error('Error loading disputes:', error)
+      setDisputes([])
+    } finally {
+      setLoading(false)
     }
   }
 
+  const handleDelete = async (id: string) => {
+    const success = await DisputeService.deleteDispute(id)
+    if (success) {
+      await loadDisputes()
+    }
+  }
+
+  const handleStatusChange = async (id: string, status: 'active' | 'resolved' | 'pending') => {
+    const updated = await DisputeService.updateDispute(id, { status })
+    if (updated) {
+      await loadDisputes()
+    }
+  }
+
+  // Ensure disputes is an array before filtering
   const filteredDisputes = filter === 'all' 
     ? disputes 
     : disputes.filter(d => d.status === filter)
@@ -60,6 +80,33 @@ export default function DisputesPage() {
       default:
         return 'text-gray-600 bg-gray-50'
     }
+  }
+
+  // Don't render dynamic content until mounted to avoid hydration errors
+  if (!mounted) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-1 container mx-auto p-6">
+          <div className="flex items-center justify-center h-64">
+            <p className="text-gray-500">Loading...</p>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-1 container mx-auto p-6">
+          <div className="flex items-center justify-center h-64">
+            <p className="text-gray-500">Loading disputes...</p>
+          </div>
+        </main>
+      </div>
+    )
   }
 
   return (
@@ -178,11 +225,11 @@ export default function DisputesPage() {
                       <div className="flex items-center gap-4 text-xs text-gray-500">
                         <span className="flex items-center gap-1">
                           <FileText className="w-3 h-3" />
-                          {dispute.documentCount}
+                          {dispute.document_count || 0}
                         </span>
                         <span className="flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
-                          {dispute.lastModified.toLocaleDateString()}
+                          {new Date(dispute.created_at).toLocaleDateString()}
                         </span>
                       </div>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(dispute.status)}`}>

@@ -16,45 +16,50 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Loader2 } from 'lucide-react'
 import Link from 'next/link'
-import { DisputeService, Dispute } from '@/lib/services/dispute-service'
+import { DisputeService } from '@/lib/services/dispute-service'
 
 export default function NewDisputePage() {
   const router = useRouter()
+  const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    disputeType: '',
-    opposingParty: '',
-    disputeValue: '',
+    dispute_type: '',
+    opposing_party: '',
+    dispute_value: '',
     urgency: 'medium',
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setLoading(true)
     
-    // Create new dispute
-    const newDispute: Dispute = {
-      id: Date.now().toString(),
-      title: formData.title,
-      description: formData.description,
-      createdAt: new Date(),
-      lastModified: new Date(),
-      status: 'active',
-      documentCount: 0,
-      reportCount: 0,
-      disputeType: formData.disputeType,
-      opposingParty: formData.opposingParty,
-      disputeValue: formData.disputeValue,
-      urgency: formData.urgency,
+    try {
+      // Use createDispute instead of saveDispute
+      const dispute = await DisputeService.createDispute({
+        title: formData.title,
+        description: formData.description,
+        dispute_type: formData.dispute_type || null,
+        opposing_party: formData.opposing_party || null,
+        dispute_value: formData.dispute_value ? parseFloat(formData.dispute_value) : null,
+        urgency: formData.urgency || null,
+        status: 'active' // Set initial status
+      })
+
+      if (dispute) {
+        // Redirect to dispute detail page
+        router.push(`/disputes/${dispute.id}`)
+      } else {
+        alert('Failed to create dispute. Please try again.')
+        setLoading(false)
+      }
+    } catch (error) {
+      console.error('Error creating dispute:', error)
+      alert('Failed to create dispute. Please try again.')
+      setLoading(false)
     }
-
-    // Save using the service
-    DisputeService.saveDispute(newDispute)
-
-    // Redirect to dispute detail page
-    router.push(`/disputes/${newDispute.id}`)
   }
 
   return (
@@ -93,6 +98,7 @@ export default function NewDisputePage() {
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     required
                     className="mt-1"
+                    disabled={loading}
                   />
                 </div>
 
@@ -106,18 +112,20 @@ export default function NewDisputePage() {
                     required
                     rows={4}
                     className="mt-1"
+                    disabled={loading}
                   />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="disputeType">Type of Dispute*</Label>
+                    <Label htmlFor="dispute_type">Type of Dispute*</Label>
                     <Select
-                      value={formData.disputeType}
-                      onValueChange={(value) => setFormData({ ...formData, disputeType: value })}
+                      value={formData.dispute_type}
+                      onValueChange={(value) => setFormData({ ...formData, dispute_type: value })}
                       required
+                      disabled={loading}
                     >
-                      <SelectTrigger id="disputeType" className="mt-1">
+                      <SelectTrigger id="dispute_type" className="mt-1">
                         <SelectValue placeholder="Select dispute type" />
                       </SelectTrigger>
                       <SelectContent>
@@ -133,27 +141,29 @@ export default function NewDisputePage() {
                   </div>
 
                   <div>
-                    <Label htmlFor="opposingParty">Opposing Party</Label>
+                    <Label htmlFor="opposing_party">Opposing Party</Label>
                     <Input
-                      id="opposingParty"
+                      id="opposing_party"
                       placeholder="Company or individual name"
-                      value={formData.opposingParty}
-                      onChange={(e) => setFormData({ ...formData, opposingParty: e.target.value })}
+                      value={formData.opposing_party}
+                      onChange={(e) => setFormData({ ...formData, opposing_party: e.target.value })}
                       className="mt-1"
+                      disabled={loading}
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="disputeValue">Estimated Value ($)</Label>
+                    <Label htmlFor="dispute_value">Estimated Value ($)</Label>
                     <Input
-                      id="disputeValue"
+                      id="dispute_value"
                       type="number"
                       placeholder="0"
-                      value={formData.disputeValue}
-                      onChange={(e) => setFormData({ ...formData, disputeValue: e.target.value })}
+                      value={formData.dispute_value}
+                      onChange={(e) => setFormData({ ...formData, dispute_value: e.target.value })}
                       className="mt-1"
+                      disabled={loading}
                     />
                   </div>
 
@@ -162,6 +172,7 @@ export default function NewDisputePage() {
                     <Select
                       value={formData.urgency}
                       onValueChange={(value) => setFormData({ ...formData, urgency: value })}
+                      disabled={loading}
                     >
                       <SelectTrigger id="urgency" className="mt-1">
                         <SelectValue />
@@ -176,11 +187,21 @@ export default function NewDisputePage() {
                 </div>
 
                 <div className="flex gap-4 pt-4">
-                  <Button type="submit" disabled={!formData.title || !formData.description || !formData.disputeType}>
-                    Create Dispute
+                  <Button 
+                    type="submit" 
+                    disabled={!formData.title || !formData.description || !formData.dispute_type || loading}
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Creating...
+                      </>
+                    ) : (
+                      'Create Dispute'
+                    )}
                   </Button>
                   <Link href="/disputes">
-                    <Button variant="outline" type="button">
+                    <Button variant="outline" type="button" disabled={loading}>
                       Cancel
                     </Button>
                   </Link>

@@ -9,49 +9,51 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ArrowLeft, Upload, Brain, MessageSquare, Loader2 } from 'lucide-react'
-import { DisputeService, Dispute, Report } from '@/lib/services/dispute-service'
+import { DisputeService } from '@/lib/services/dispute-service'
 import DocumentUpload from '@/components/disputes/document-upload'
 import DocumentList from '@/components/disputes/document-list'
 import ReportViewer from '@/components/disputes/report-viewer'
 import DisputeChat from '@/components/disputes/dispute-chat'
+import { Database } from '@/lib/database.types'
+
+type DisputeWithDetails = Database['public']['Tables']['disputes']['Row'] & {
+  documents: Database['public']['Tables']['user_documents']['Row'][]
+  reports: Database['public']['Tables']['dispute_reports']['Row'][]
+}
 
 export default function DisputeDetailPage() {
   const params = useParams()
-  const [dispute, setDispute] = useState<Dispute | null>(null)
+  const [dispute, setDispute] = useState<DisputeWithDetails | null>(null)
   const [activeTab, setActiveTab] = useState('overview')
-  const [reports, setReports] = useState<Report[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
-  const [selectedReport, setSelectedReport] = useState<Report | null>(null)
+  const [selectedReport, setSelectedReport] = useState<Database['public']['Tables']['dispute_reports']['Row'] | null>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const found = DisputeService.getDispute(params.id as string)
-    if (found) {
-      setDispute(found)
-      const disputeReports = DisputeService.getReports(params.id as string)
-      setReports(disputeReports)
-      if (disputeReports.length > 0 && !selectedReport) {
-        setSelectedReport(disputeReports[0])
-      }
-    }
-  }, [params.id, selectedReport])
+    loadDispute()
+  }, [params.id])
 
-  const refreshData = () => {
-    const found = DisputeService.getDispute(params.id as string)
-    if (found) {
-      setDispute(found)
-      const disputeReports = DisputeService.getReports(params.id as string)
-      setReports(disputeReports)
-      if (disputeReports.length > 0) {
-        setSelectedReport(disputeReports[0])
+  const loadDispute = async () => {
+    setLoading(true)
+    try {
+      const data = await DisputeService.getDisputeWithDetails(params.id as string)
+      if (data) {
+        setDispute(data)
+        if (data.reports && data.reports.length > 0 && !selectedReport) {
+          setSelectedReport(data.reports[0])
+        }
       }
+    } catch (error) {
+      console.error('Error loading dispute:', error)
+    } finally {
+      setLoading(false)
     }
   }
 
   const handleGenerateReport = async () => {
     if (!dispute) return
 
-    const documents = DisputeService.getDocuments(dispute.id)
-    if (documents.length === 0) {
+    if (!dispute.documents || dispute.documents.length === 0) {
       alert('Please upload documents before generating a report')
       setActiveTab('documents')
       return
@@ -66,7 +68,7 @@ export default function DisputeDetailPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          documents: documents,
+          documents: dispute.documents,
           disputeDetails: dispute
         })
       })
@@ -75,11 +77,26 @@ export default function DisputeDetailPage() {
         throw new Error('Failed to generate report')
       }
 
-      const { report } = await response.json()
+      const { analysis } = await response.json()
       
-      // Save the report
-      DisputeService.saveReport(report)
-      refreshData()
+      // Save the report to Supabase
+      const report = await DisputeService.createReport({
+        dispute_id: dispute.id,
+        title: 'AI Analysis Report',
+        report_type: 'analysis',
+        summary: analysis.summary || '',
+        strengths: analysis.strengths || [],
+        weaknesses: analysis.weaknesses || [],
+        opportunities: analysis.opportunities || [],
+        risks: analysis.risks || [],
+        negotiation_strategies: analysis.negotiationStrategies || [],
+        key_terms: analysis.keyTerms || [],
+        recommendations: analysis.recommendations || []
+      })
+
+      if (report) {
+        await loadDispute()
+      }
       
     } catch (error) {
       console.error('Error generating report:', error)
@@ -87,6 +104,19 @@ export default function DisputeDetailPage() {
     } finally {
       setIsGenerating(false)
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-1 container mx-auto p-6">
+          <div className="flex items-center justify-center h-64">
+            <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+          </div>
+        </main>
+      </div>
+    )
   }
 
   if (!dispute) {
@@ -118,7 +148,7 @@ export default function DisputeDetailPage() {
     }
   }
 
-  const getUrgencyColor = (urgency?: string) => {
+  const getUrgencyColor = (urgency?: string | null) => {
     switch (urgency) {
       case 'high':
         return 'text-red-600 bg-red-50'
@@ -151,9 +181,9 @@ export default function DisputeDetailPage() {
             <div>
               <h1 className="text-3xl font-bold mb-2">{dispute.title}</h1>
               <div className="flex items-center gap-4 text-sm text-gray-600">
-                <span>Created {dispute.createdAt.toLocaleDateString()}</span>
+                <span>Created {new Date(dispute.created_at).toLocaleDateString()}</span>
                 <span>•</span>
-                <span>Last updated {dispute.lastModified.toLocaleDateString()}</span>
+                <span>Last updated {new Date(dispute.last_modified).toLocaleDateString()}</span>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -173,11 +203,11 @@ export default function DisputeDetailPage() {
             <TabsList>
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="documents">
-                Documents {dispute.documentCount > 0 && `(${dispute.documentCount})`}
+                Documents {dispute.documents && dispute.documents.length > 0 && `(${dispute.documents.length})`}
               </TabsTrigger>
               <TabsTrigger value="chat">Chat</TabsTrigger>
               <TabsTrigger value="analysis">
-                AI Analysis {dispute.reportCount > 0 && `(${dispute.reportCount})`}
+                AI Analysis {dispute.reports && dispute.reports.length > 0 && `(${dispute.reports.length})`}
               </TabsTrigger>
             </TabsList>
 
@@ -193,27 +223,27 @@ export default function DisputeDetailPage() {
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {dispute.disputeType && (
+                    {dispute.dispute_type && (
                       <div>
                         <h3 className="font-semibold mb-1">Type</h3>
                         <p className="text-gray-600 dark:text-gray-400">
-                          {dispute.disputeType.charAt(0).toUpperCase() + dispute.disputeType.slice(1).replace('-', ' ')}
+                          {dispute.dispute_type.charAt(0).toUpperCase() + dispute.dispute_type.slice(1).replace('-', ' ')}
                         </p>
                       </div>
                     )}
                     
-                    {dispute.opposingParty && (
+                    {dispute.opposing_party && (
                       <div>
                         <h3 className="font-semibold mb-1">Opposing Party</h3>
-                        <p className="text-gray-600 dark:text-gray-400">{dispute.opposingParty}</p>
+                        <p className="text-gray-600 dark:text-gray-400">{dispute.opposing_party}</p>
                       </div>
                     )}
                     
-                    {dispute.disputeValue && (
+                    {dispute.dispute_value && (
                       <div>
                         <h3 className="font-semibold mb-1">Estimated Value</h3>
                         <p className="text-gray-600 dark:text-gray-400">
-                          ${parseInt(dispute.disputeValue).toLocaleString()}
+                          ${parseFloat(dispute.dispute_value.toString()).toLocaleString()}
                         </p>
                       </div>
                     )}
@@ -246,7 +276,6 @@ export default function DisputeDetailPage() {
                     <p className="text-sm text-gray-600 mt-1">Get AI-powered insights</p>
                   </CardContent>
                 </Card>
-
               </div>
             </TabsContent>
 
@@ -258,13 +287,14 @@ export default function DisputeDetailPage() {
                 <CardContent className="space-y-6">
                   <DocumentUpload 
                     disputeId={dispute.id} 
-                    onUploadComplete={refreshData}
+                    onUploadComplete={loadDispute}
                   />
                   <div className="border-t pt-6">
                     <h3 className="font-semibold mb-4">Uploaded Documents</h3>
                     <DocumentList 
                       disputeId={dispute.id}
-                      onDocumentChange={refreshData}
+                      documents={dispute.documents}
+                      onDocumentChange={loadDispute}
                     />
                   </div>
                 </CardContent>
@@ -295,7 +325,7 @@ export default function DisputeDetailPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  {reports.length === 0 ? (
+                  {!dispute.reports || dispute.reports.length === 0 ? (
                     <div className="text-center py-12 text-gray-500">
                       <Brain className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                       <p>No analysis generated yet</p>
@@ -303,9 +333,9 @@ export default function DisputeDetailPage() {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {reports.length > 1 && (
+                      {dispute.reports.length > 1 && (
                         <div className="flex gap-2 flex-wrap">
-                          {reports.map((report, index) => (
+                          {dispute.reports.map((report, index) => (
                             <Button
                               key={report.id}
                               variant={selectedReport?.id === report.id ? 'default' : 'outline'}

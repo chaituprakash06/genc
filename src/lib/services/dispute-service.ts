@@ -1,168 +1,258 @@
 // lib/services/dispute-service.ts
-export interface Dispute {
-  id: string
-  title: string
-  description: string
-  createdAt: Date
-  lastModified: Date
-  status: 'active' | 'resolved' | 'pending'
-  documentCount: number
-  reportCount: number
-  disputeType?: string
-  opposingParty?: string
-  disputeValue?: string
-  urgency?: string
-  documents?: Document[]
-  reports?: Report[]
-}
+import { createClient } from '@/lib/supabase-browser'
+import { Database } from '@/lib/database.types'
 
-export interface Document {
-  id: string
-  name: string
-  type: string
-  size: string
-  content?: string
-  uploadedAt: Date
-  disputeId: string
-}
-
-export interface Report {
-  id: string
-  createdAt: Date
-  analysis: string
-  disputeId: string
-  status: 'generating' | 'completed' | 'error'
-}
+type Dispute = Database['public']['Tables']['disputes']['Row']
+type Document = Database['public']['Tables']['user_documents']['Row']
+type Report = Database['public']['Tables']['dispute_reports']['Row']
 
 export class DisputeService {
-  private static DISPUTES_KEY = 'disputes'
-  private static DOCUMENTS_KEY = 'documents'
-  private static REPORTS_KEY = 'reports'
+  private static supabase = createClient()
 
   // Dispute methods
-  static getDisputes(): Dispute[] {
-    const saved = localStorage.getItem(this.DISPUTES_KEY)
-    if (!saved) return []
-    
-    return JSON.parse(saved).map((d: Dispute) => ({
-      ...d,
-      createdAt: new Date(d.createdAt),
-      lastModified: new Date(d.lastModified)
-    }))
-  }
+  static async getDisputes(): Promise<Dispute[]> {
+    const { data, error } = await this.supabase
+      .from('disputes')
+      .select('*')
+      .order('created_at', { ascending: false })
 
-  static getDispute(id: string): Dispute | null {
-    const disputes = this.getDisputes()
-    return disputes.find(d => d.id === id) || null
-  }
-
-  static saveDispute(dispute: Dispute): void {
-    const disputes = this.getDisputes()
-    const index = disputes.findIndex(d => d.id === dispute.id)
-    
-    if (index >= 0) {
-      disputes[index] = dispute
-    } else {
-      disputes.push(dispute)
+    if (error) {
+      console.error('Error fetching disputes:', error)
+      return []
     }
-    
-    localStorage.setItem(this.DISPUTES_KEY, JSON.stringify(disputes))
+
+    return data || []
   }
 
-  static deleteDispute(id: string): void {
-    const disputes = this.getDisputes().filter(d => d.id !== id)
-    localStorage.setItem(this.DISPUTES_KEY, JSON.stringify(disputes))
+  static async getDispute(id: string): Promise<Dispute | null> {
+    const { data, error } = await this.supabase
+      .from('disputes')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (error) {
+      console.error('Error fetching dispute:', error)
+      return null
+    }
+
+    return data
+  }
+
+  static async createDispute(dispute: Omit<Database['public']['Tables']['disputes']['Insert'], 'user_id'>): Promise<Dispute | null> {
+    const { data: { user } } = await this.supabase.auth.getUser()
     
-    // Also delete associated documents and reports
-    this.deleteDocumentsByDisputeId(id)
-    this.deleteReportsByDisputeId(id)
+    if (!user) {
+      console.error('No authenticated user')
+      return null
+    }
+
+    const { data, error } = await this.supabase
+      .from('disputes')
+      .insert({
+        ...dispute,
+        user_id: user.id,
+        document_count: 0,
+        report_count: 0
+      })
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error creating dispute:', error)
+      return null
+    }
+
+    return data
+  }
+
+  static async updateDispute(id: string, updates: Database['public']['Tables']['disputes']['Update']): Promise<Dispute | null> {
+    const { data, error } = await this.supabase
+      .from('disputes')
+      .update({
+        ...updates,
+        last_modified: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error updating dispute:', error)
+      return null
+    }
+
+    return data
+  }
+
+  static async deleteDispute(id: string): Promise<boolean> {
+    const { error } = await this.supabase
+      .from('disputes')
+      .delete()
+      .eq('id', id)
+
+    if (error) {
+      console.error('Error deleting dispute:', error)
+      return false
+    }
+
+    return true
   }
 
   // Document methods
-  static getDocuments(disputeId: string): Document[] {
-    const saved = localStorage.getItem(this.DOCUMENTS_KEY)
-    if (!saved) return []
-    
-    const allDocs = JSON.parse(saved).map((d: Document) => ({
-      ...d,
-      uploadedAt: new Date(d.uploadedAt)
-    }))
-    
-    return allDocs.filter((d: Document) => d.disputeId === disputeId)
-  }
+  static async getDocuments(disputeId: string): Promise<Document[]> {
+    const { data, error } = await this.supabase
+      .from('user_documents')
+      .select('*')
+      .eq('dispute_id', disputeId)
+      .order('uploaded_at', { ascending: false })
 
-  static saveDocument(document: Document): void {
-    const saved = localStorage.getItem(this.DOCUMENTS_KEY)
-    const documents = saved ? JSON.parse(saved) : []
-    documents.push(document)
-    localStorage.setItem(this.DOCUMENTS_KEY, JSON.stringify(documents))
-    
-    // Update dispute document count
-    const dispute = this.getDispute(document.disputeId)
-    if (dispute) {
-      dispute.documentCount = this.getDocuments(document.disputeId).length
-      dispute.lastModified = new Date()
-      this.saveDispute(dispute)
+    if (error) {
+      console.error('Error fetching documents:', error)
+      return []
     }
+
+    return data || []
   }
 
-  static deleteDocument(id: string, disputeId: string): void {
-    const saved = localStorage.getItem(this.DOCUMENTS_KEY)
-    if (!saved) return
+  static async uploadDocument(document: Omit<Database['public']['Tables']['user_documents']['Insert'], 'user_id'>): Promise<Document | null> {
+    const { data: { user } } = await this.supabase.auth.getUser()
     
-    const documents = JSON.parse(saved).filter((d: Document) => d.id !== id)
-    localStorage.setItem(this.DOCUMENTS_KEY, JSON.stringify(documents))
-    
-    // Update dispute document count
-    const dispute = this.getDispute(disputeId)
-    if (dispute) {
-      dispute.documentCount = this.getDocuments(disputeId).length
-      dispute.lastModified = new Date()
-      this.saveDispute(dispute)
+    if (!user) {
+      console.error('No authenticated user')
+      return null
     }
+
+    const { data, error } = await this.supabase
+      .from('user_documents')
+      .insert({
+        ...document,
+        user_id: user.id
+      })
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error uploading document:', error)
+      return null
+    }
+
+    // Update document count
+    await this.updateDocumentCount(document.dispute_id)
+
+    return data
   }
 
-  static deleteDocumentsByDisputeId(disputeId: string): void {
-    const saved = localStorage.getItem(this.DOCUMENTS_KEY)
-    if (!saved) return
-    
-    const documents = JSON.parse(saved).filter((d: Document) => d.disputeId !== disputeId)
-    localStorage.setItem(this.DOCUMENTS_KEY, JSON.stringify(documents))
+  static async deleteDocument(id: string, disputeId: string): Promise<boolean> {
+    const { error } = await this.supabase
+      .from('user_documents')
+      .delete()
+      .eq('id', id)
+
+    if (error) {
+      console.error('Error deleting document:', error)
+      return false
+    }
+
+    // Update document count
+    await this.updateDocumentCount(disputeId)
+
+    return true
   }
 
   // Report methods
-  static getReports(disputeId: string): Report[] {
-    const saved = localStorage.getItem(this.REPORTS_KEY)
-    if (!saved) return []
-    
-    const allReports = JSON.parse(saved).map((r: Report) => ({
-      ...r,
-      createdAt: new Date(r.createdAt)
-    }))
-    
-    return allReports.filter((r: Report) => r.disputeId === disputeId)
+  static async getReports(disputeId: string): Promise<Report[]> {
+    const { data, error } = await this.supabase
+      .from('dispute_reports')
+      .select('*')
+      .eq('dispute_id', disputeId)
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('Error fetching reports:', error)
+      return []
+    }
+
+    return data || []
   }
 
-  static saveReport(report: Report): void {
-    const saved = localStorage.getItem(this.REPORTS_KEY)
-    const reports = saved ? JSON.parse(saved) : []
-    reports.push(report)
-    localStorage.setItem(this.REPORTS_KEY, JSON.stringify(reports))
+  static async createReport(report: Omit<Database['public']['Tables']['dispute_reports']['Insert'], 'user_id'>): Promise<Report | null> {
+    const { data: { user } } = await this.supabase.auth.getUser()
     
-    // Update dispute report count
-    const dispute = this.getDispute(report.disputeId)
-    if (dispute) {
-      dispute.reportCount = this.getReports(report.disputeId).length
-      dispute.lastModified = new Date()
-      this.saveDispute(dispute)
+    if (!user) {
+      console.error('No authenticated user')
+      return null
+    }
+
+    const { data, error } = await this.supabase
+      .from('dispute_reports')
+      .insert({
+        ...report,
+        user_id: user.id
+      })
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error creating report:', error)
+      return null
+    }
+
+    // Update report count
+    await this.updateReportCount(report.dispute_id)
+
+    return data
+  }
+
+  // Helper methods
+  static async getDisputeWithDetails(id: string) {
+    const dispute = await this.getDispute(id)
+    if (!dispute) return null
+
+    const [documents, reports] = await Promise.all([
+      this.getDocuments(id),
+      this.getReports(id)
+    ])
+
+    return {
+      ...dispute,
+      documents,
+      reports
     }
   }
 
-  static deleteReportsByDisputeId(disputeId: string): void {
-    const saved = localStorage.getItem(this.REPORTS_KEY)
-    if (!saved) return
-    
-    const reports = JSON.parse(saved).filter((r: Report) => r.disputeId !== disputeId)
-    localStorage.setItem(this.REPORTS_KEY, JSON.stringify(reports))
+  // Update counts
+  private static async updateDocumentCount(disputeId: string) {
+    const { count } = await this.supabase
+      .from('user_documents')
+      .select('*', { count: 'exact', head: true })
+      .eq('dispute_id', disputeId)
+
+    if (count !== null) {
+      await this.supabase
+        .from('disputes')
+        .update({ 
+          document_count: count,
+          last_modified: new Date().toISOString()
+        })
+        .eq('id', disputeId)
+    }
+  }
+
+  private static async updateReportCount(disputeId: string) {
+    const { count } = await this.supabase
+      .from('dispute_reports')
+      .select('*', { count: 'exact', head: true })
+      .eq('dispute_id', disputeId)
+
+    if (count !== null) {
+      await this.supabase
+        .from('disputes')
+        .update({ 
+          report_count: count,
+          last_modified: new Date().toISOString()
+        })
+        .eq('id', disputeId)
+    }
   }
 }

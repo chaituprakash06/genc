@@ -5,7 +5,8 @@ import { useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Upload, File, X, Loader2 } from 'lucide-react'
-import { DisputeService, Document } from '@/lib/services/dispute-service'
+import { DisputeService } from '@/lib/services/dispute-service'
+import { createClient } from '@/lib/supabase-browser'
 
 interface DocumentUploadProps {
   disputeId: string
@@ -16,6 +17,7 @@ export default function DocumentUpload({ disputeId, onUploadComplete }: Document
   const [uploading, setUploading] = useState(false)
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const supabase = createClient()
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
@@ -32,21 +34,43 @@ export default function DocumentUpload({ disputeId, onUploadComplete }: Document
     setUploading(true)
     
     try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('No authenticated user')
+
       // Process each file
       for (const file of selectedFiles) {
-        const content = await readFileContent(file)
+        // Upload file to Supabase Storage
+        const fileExt = file.name.split('.').pop()
+        const fileName = `${user.id}/${disputeId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
         
-        const document: Document = {
-          id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-          name: file.name,
-          type: file.type || 'application/octet-stream',
-          size: formatFileSize(file.size),
-          content: content,
-          uploadedAt: new Date(),
-          disputeId: disputeId
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('documents')
+          .upload(fileName, file)
+
+        if (uploadError) {
+          console.error('Error uploading to storage:', uploadError)
+          // If storage upload fails, continue with text content
         }
-        
-        DisputeService.saveDocument(document)
+
+        // Read file content for text-based files
+        let content = ''
+        if (file.type.includes('text') || file.name.endsWith('.txt')) {
+          content = await readFileContent(file)
+        }
+
+        // Save document metadata to database
+        const document = await DisputeService.uploadDocument({
+          dispute_id: disputeId,
+          file_name: file.name,
+          file_path: uploadData?.path || fileName,
+          file_size: file.size,
+          mime_type: file.type || 'application/octet-stream'
+        })
+
+        if (document && content) {
+          // If it's a text file, you might want to create document chunks for search
+          // This would be handled by a separate process or Edge Function
+        }
       }
       
       setSelectedFiles([])
@@ -59,6 +83,7 @@ export default function DocumentUpload({ disputeId, onUploadComplete }: Document
       }
     } catch (error) {
       console.error('Error uploading files:', error)
+      alert('Failed to upload files. Please try again.')
     } finally {
       setUploading(false)
     }
@@ -121,6 +146,7 @@ export default function DocumentUpload({ disputeId, onUploadComplete }: Document
                     size="sm"
                     variant="ghost"
                     onClick={() => removeFile(index)}
+                    disabled={uploading}
                   >
                     <X className="w-4 h-4" />
                   </Button>
