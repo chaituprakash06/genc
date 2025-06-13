@@ -1,10 +1,13 @@
 // lib/services/chat-service.ts
 import { createClient } from '@/lib/supabase-browser'
 import { Database, Json } from '@/lib/database.types'
-import { RealtimeChannel } from '@supabase/supabase-js'
+import { RealtimeChannel, RealtimePostgresInsertPayload } from '@supabase/supabase-js'
 
 type ChatMessage = Database['public']['Tables']['chat_messages']['Row']
 type ChatConversation = Database['public']['Tables']['chat_conversations']['Row']
+
+// Define the payload type for real-time subscriptions
+type MessageInsertPayload = RealtimePostgresInsertPayload<ChatMessage>
 
 export class ChatService {
   private static supabase = createClient()
@@ -142,8 +145,8 @@ export class ChatService {
           table: 'chat_messages',
           filter: `conversation_id=eq.${conversationId}`
         },
-        (payload: any) => {
-          onMessage(payload.new as ChatMessage)
+        (payload: MessageInsertPayload) => {
+          onMessage(payload.new)
         }
       )
       .subscribe()

@@ -62,10 +62,10 @@ export default function DisputeChat({ dispute }: DisputeChatProps) {
         
         // Subscribe to new messages
         unsubscribeRef.current = ChatService.subscribeToMessages(
-          conv.id,
-          (newMessage) => {
+        conv.id,
+        (newMessage: ChatMessage) => {
             setMessages(prev => [...prev, newMessage])
-          }
+        }
         )
       } else {
         console.error('Failed to create or get conversation')
