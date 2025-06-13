@@ -15,7 +15,7 @@ import {
   CheckCircle,
   PlayCircle
 } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 
 export default function LandingPage() {
   const [videoLoaded, setVideoLoaded] = useState(false)
