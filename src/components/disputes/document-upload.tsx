@@ -52,7 +52,7 @@ export default function DocumentUpload({ disputeId, onUploadComplete }: Document
         // Upload file to Supabase Storage with the new name
         const fileName = `${user.id}/${disputeId}/${processed.newName}`
         
-        const { data: uploadData, error: uploadError } = await supabase.storage
+        const { error: uploadError } = await supabase.storage
           .from('documents')
           .upload(fileName, file)
 
