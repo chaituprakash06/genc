@@ -7,11 +7,19 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Upload, File, X, Loader2, RefreshCw } from 'lucide-react'
 import { DisputeService } from '@/lib/services/dispute-service'
 import { createClient } from '@/lib/supabase-browser'
-import { DocumentProcessor } from '@/lib/services/document-processor'
 
 interface DocumentUploadProps {
   disputeId: string
   onUploadComplete?: () => void
+}
+
+interface ProcessedDocument {
+  originalName: string
+  newName: string
+  extractedDate: Date | null
+  content: string
+  documentType: string
+  confidence: 'high' | 'medium' | 'low'
 }
 
 export default function DocumentUpload({ disputeId, onUploadComplete }: DocumentUploadProps) {
@@ -20,6 +28,95 @@ export default function DocumentUpload({ disputeId, onUploadComplete }: Document
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
+
+  // Helper function to extract text content
+  const extractTextContent = async (file: File): Promise<string> => {
+    if (file.type.includes('text') || file.name.endsWith('.txt')) {
+      return await file.text()
+    }
+    // For other files, return a placeholder
+    return `[Content of ${file.name} - ${file.type}]`
+  }
+
+  // Helper function to extract document info using AI
+  const extractDocumentInfo = async (content: string, fileName: string): Promise<{
+    documentType: string
+    extractedDate: Date | null
+    confidence: 'high' | 'medium' | 'low'
+  }> => {
+    try {
+      const response = await fetch('/api/ai/extract-document-info', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content, fileName })
+      })
+      
+      if (!response.ok) throw new Error('Document info extraction failed')
+      
+      const { documentType, date, confidence } = await response.json()
+      return {
+        documentType: documentType || 'Unknown',
+        extractedDate: date ? new Date(date) : null,
+        confidence: confidence || 'low'
+      }
+    } catch (error) {
+      console.error('Error extracting document info:', error)
+      // Fallback to basic extraction
+      return {
+        documentType: guessDocumentType(fileName),
+        extractedDate: new Date(),
+        confidence: 'low'
+      }
+    }
+  }
+
+  // Helper function to guess document type from filename
+  const guessDocumentType = (fileName: string): string => {
+    const lowerName = fileName.toLowerCase()
+    
+    if (lowerName.includes('contract')) return 'Contract'
+    if (lowerName.includes('agreement')) return 'Agreement'
+    if (lowerName.includes('invoice')) return 'Invoice'
+    if (lowerName.includes('receipt')) return 'Receipt'
+    if (lowerName.includes('letter')) return 'Letter'
+    if (lowerName.includes('memo')) return 'Memo'
+    if (lowerName.includes('report')) return 'Report'
+    if (lowerName.includes('statement')) return 'Statement'
+    
+    const ext = fileName.split('.').pop()?.toLowerCase()
+    if (ext === 'pdf') return 'PDF Document'
+    if (ext === 'doc' || ext === 'docx') return 'Word Document'
+    if (ext === 'txt') return 'Text Document'
+    
+    return 'Document'
+  }
+
+  // Helper function to generate new filename with date prefix
+  const generateNewFileName = (originalName: string, date: Date | null): string => {
+    const baseDate = date || new Date()
+    const dateStr = baseDate.toISOString().split('T')[0] // YYYY-MM-DD format
+    
+    // Remove any existing date prefix
+    const cleanName = originalName.replace(/^\d{4}-\d{2}-\d{2}_/, '')
+    
+    return `${dateStr}_${cleanName}`
+  }
+
+  // Process a single document
+  const processDocument = async (file: File): Promise<ProcessedDocument> => {
+    const content = await extractTextContent(file)
+    const { documentType, extractedDate, confidence } = await extractDocumentInfo(content, file.name)
+    const newFileName = generateNewFileName(file.name, extractedDate)
+    
+    return {
+      originalName: file.name,
+      newName: newFileName,
+      extractedDate,
+      content,
+      documentType,
+      confidence
+    }
+  }
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
@@ -42,12 +139,8 @@ export default function DocumentUpload({ disputeId, onUploadComplete }: Document
 
       // Process each file
       for (const file of selectedFiles) {
-        // First, process the document to extract date and generate new name
-        const processed = await DocumentProcessor.processDocument(
-          file, 
-          user.id, 
-          disputeId
-        )
+        // Process the document to extract date and generate new name
+        const processed = await processDocument(file)
 
         // Upload file to Supabase Storage with the new name
         const fileName = `${user.id}/${disputeId}/${processed.newName}`
@@ -104,7 +197,81 @@ export default function DocumentUpload({ disputeId, onUploadComplete }: Document
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('No authenticated user')
 
-      await DocumentProcessor.reprocessDisputeDocuments(disputeId, user.id)
+      // Get all documents for the dispute
+      const { data: documents, error } = await supabase
+        .from('user_documents')
+        .select('*')
+        .eq('dispute_id', disputeId)
+        .order('uploaded_at', { ascending: false })
+      
+      if (error) throw error
+      
+      for (const doc of documents || []) {
+        // Download file from storage
+        const { data: fileBlob, error: downloadError } = await supabase.storage
+          .from('documents')
+          .download(doc.file_path)
+        
+        if (downloadError || !fileBlob) {
+          console.error(`Error downloading ${doc.file_name}:`, downloadError)
+          continue
+        }
+        
+        // Process document without creating a File object
+        const fileName = doc.original_name || doc.file_name
+        let content = ''
+        
+        // Extract text content based on type
+        if (doc.mime_type?.includes('text') || fileName.endsWith('.txt')) {
+          content = await fileBlob.text()
+        } else {
+          content = `[Content of ${fileName} - ${doc.mime_type}]`
+        }
+        
+        // Extract document info
+        const { documentType, extractedDate, confidence } = await extractDocumentInfo(content, fileName)
+        const newFileName = generateNewFileName(fileName, extractedDate)
+        
+        // Generate new path
+        const newPath = `${user.id}/${disputeId}/${newFileName}`
+        
+        // Rename file in storage if needed
+        if (doc.file_path !== newPath) {
+          // Upload with new name - fileBlob is already available
+          await supabase.storage
+            .from('documents')
+            .upload(newPath, fileBlob, { upsert: true })
+          
+          // Delete old file
+          await supabase.storage
+            .from('documents')
+            .remove([doc.file_path])
+        }
+        
+        // Update database record
+        const updateData: any = {
+          file_name: newFileName,
+          file_path: newPath,
+        }
+
+        // Only add these fields if they exist in the table
+        if (extractedDate) {
+          updateData.extracted_date = extractedDate.toISOString()
+        }
+        if (documentType) {
+          updateData.document_type = documentType
+        }
+        if (confidence) {
+          updateData.extraction_confidence = confidence
+        }
+        updateData.processed_at = new Date().toISOString()
+        updateData.original_name = doc.original_name || doc.file_name
+
+        await supabase
+          .from('user_documents')
+          .update(updateData)
+          .eq('id', doc.id)
+      }
       
       if (onUploadComplete) {
         onUploadComplete()
