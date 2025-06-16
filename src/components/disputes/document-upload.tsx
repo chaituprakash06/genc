@@ -249,7 +249,15 @@ export default function DocumentUpload({ disputeId, onUploadComplete }: Document
         }
         
         // Update database record
-        const updateData: any = {
+         const updateData: {
+          file_name: string
+          file_path: string
+          extracted_date?: string
+          document_type?: string
+          extraction_confidence?: string
+          processed_at?: string
+          original_name?: string
+        } = {
           file_name: newFileName,
           file_path: newPath,
         }
