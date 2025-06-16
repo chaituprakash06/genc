@@ -4,9 +4,10 @@
 import { useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Upload, File, X, Loader2 } from 'lucide-react'
+import { Upload, File, X, Loader2, RefreshCw } from 'lucide-react'
 import { DisputeService } from '@/lib/services/dispute-service'
 import { createClient } from '@/lib/supabase-browser'
+import { DocumentProcessor } from '@/lib/services/document-processor'
 
 interface DocumentUploadProps {
   disputeId: string
@@ -15,6 +16,7 @@ interface DocumentUploadProps {
 
 export default function DocumentUpload({ disputeId, onUploadComplete }: DocumentUploadProps) {
   const [uploading, setUploading] = useState(false)
+  const [processing, setProcessing] = useState(false)
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
@@ -32,6 +34,7 @@ export default function DocumentUpload({ disputeId, onUploadComplete }: Document
     if (selectedFiles.length === 0) return
 
     setUploading(true)
+    setProcessing(true)
     
     try {
       const { data: { user } } = await supabase.auth.getUser()
@@ -39,9 +42,15 @@ export default function DocumentUpload({ disputeId, onUploadComplete }: Document
 
       // Process each file
       for (const file of selectedFiles) {
-        // Upload file to Supabase Storage
-        const fileExt = file.name.split('.').pop()
-        const fileName = `${user.id}/${disputeId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
+        // First, process the document to extract date and generate new name
+        const processed = await DocumentProcessor.processDocument(
+          file, 
+          user.id, 
+          disputeId
+        )
+
+        // Upload file to Supabase Storage with the new name
+        const fileName = `${user.id}/${disputeId}/${processed.newName}`
         
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('documents')
@@ -49,27 +58,25 @@ export default function DocumentUpload({ disputeId, onUploadComplete }: Document
 
         if (uploadError) {
           console.error('Error uploading to storage:', uploadError)
-          // If storage upload fails, continue with text content
+          throw uploadError
         }
 
-        // Read file content for text-based files
-        let content = ''
-        if (file.type.includes('text') || file.name.endsWith('.txt')) {
-          content = await readFileContent(file)
-        }
-
-        // Save document metadata to database
+        // Save document metadata to database with extracted information
         const document = await DisputeService.uploadDocument({
           dispute_id: disputeId,
-          file_name: file.name,
-          file_path: uploadData?.path || fileName,
+          file_name: processed.newName,
+          file_path: fileName,
           file_size: file.size,
-          mime_type: file.type || 'application/octet-stream'
+          mime_type: file.type || 'application/octet-stream',
+          extracted_date: processed.extractedDate?.toISOString(),
+          document_type: processed.documentType,
+          extraction_confidence: processed.confidence,
+          processed_at: new Date().toISOString(),
+          original_name: file.name
         })
 
-        if (document && content) {
-          // If it's a text file, you might want to create document chunks for search
-          // This would be handled by a separate process or Edge Function
+        if (!document) {
+          throw new Error('Failed to save document metadata')
         }
       }
       
@@ -86,16 +93,30 @@ export default function DocumentUpload({ disputeId, onUploadComplete }: Document
       alert('Failed to upload files. Please try again.')
     } finally {
       setUploading(false)
+      setProcessing(false)
     }
   }
 
-  const readFileContent = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = (e) => resolve(e.target?.result as string)
-      reader.onerror = reject
-      reader.readAsText(file)
-    })
+  const handleReprocessDocuments = async () => {
+    setProcessing(true)
+    
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('No authenticated user')
+
+      await DocumentProcessor.reprocessDisputeDocuments(disputeId, user.id)
+      
+      if (onUploadComplete) {
+        onUploadComplete()
+      }
+      
+      alert('Documents reprocessed successfully!')
+    } catch (error) {
+      console.error('Error reprocessing documents:', error)
+      alert('Failed to reprocess documents. Please try again.')
+    } finally {
+      setProcessing(false)
+    }
   }
 
   const formatFileSize = (bytes: number): string => {
@@ -108,6 +129,27 @@ export default function DocumentUpload({ disputeId, onUploadComplete }: Document
 
   return (
     <div className="space-y-4">
+      <div className="flex justify-end">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleReprocessDocuments}
+          disabled={processing}
+        >
+          {processing ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Processing...
+            </>
+          ) : (
+            <>
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Reprocess All Documents
+            </>
+          )}
+        </Button>
+      </div>
+
       <div
         className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
         onClick={() => fileInputRef.current?.click()}
@@ -118,6 +160,9 @@ export default function DocumentUpload({ disputeId, onUploadComplete }: Document
         </p>
         <p className="text-xs text-gray-500 mt-1">
           PDF, DOC, DOCX, TXT up to 10MB
+        </p>
+        <p className="text-xs text-gray-400 mt-2">
+          Documents will be automatically dated and renamed
         </p>
         <input
           ref={fileInputRef}
@@ -157,12 +202,12 @@ export default function DocumentUpload({ disputeId, onUploadComplete }: Document
             <Button
               className="w-full mt-4"
               onClick={handleUpload}
-              disabled={uploading}
+              disabled={uploading || processing}
             >
               {uploading ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Uploading...
+                  {processing ? 'Processing & Uploading...' : 'Uploading...'}
                 </>
               ) : (
                 <>

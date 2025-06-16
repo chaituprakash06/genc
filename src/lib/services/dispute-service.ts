@@ -121,33 +121,76 @@ export class DisputeService {
     return data || []
   }
 
-  static async uploadDocument(document: Omit<Database['public']['Tables']['user_documents']['Insert'], 'user_id'>): Promise<Document | null> {
-    const { data: { user } } = await this.supabase.auth.getUser()
-    
-    if (!user) {
-      console.error('No authenticated user')
-      return null
-    }
+// In lib/services/dispute-service.ts, update the uploadDocument method:
 
-    const { data, error } = await this.supabase
+static async uploadDocument(document: Omit<Database['public']['Tables']['user_documents']['Insert'], 'user_id'> & {
+  extracted_date?: string | null
+  document_type?: string | null
+  extraction_confidence?: 'high' | 'medium' | 'low' | null
+  processed_at?: string | null
+  original_name?: string | null
+}): Promise<Document | null> {
+  const { data: { user } } = await this.supabase.auth.getUser()
+  
+  if (!user) {
+    console.error('No authenticated user')
+    return null
+  }
+
+  // Extract the base fields for user_documents table
+  const { 
+    extracted_date,
+    document_type,
+    extraction_confidence,
+    processed_at,
+    original_name,
+    ...baseDocument 
+  } = document
+
+  // First insert the base document
+  const { data, error } = await this.supabase
+    .from('user_documents')
+    .insert({
+      ...baseDocument,
+      user_id: user.id
+    })
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error uploading document:', error)
+    return null
+  }
+
+  // Then update with the additional fields
+  if (data && (extracted_date || document_type || extraction_confidence || processed_at || original_name)) {
+    const { data: updatedData, error: updateError } = await this.supabase
       .from('user_documents')
-      .insert({
-        ...document,
-        user_id: user.id
+      .update({
+        extracted_date,
+        document_type,
+        extraction_confidence,
+        processed_at,
+        original_name
       })
+      .eq('id', data.id)
       .select()
       .single()
 
-    if (error) {
-      console.error('Error uploading document:', error)
-      return null
+    if (updateError) {
+      console.error('Error updating document metadata:', updateError)
+    } else if (updatedData) {
+      // Update document count
+      await this.updateDocumentCount(document.dispute_id)
+      return updatedData
     }
-
-    // Update document count
-    await this.updateDocumentCount(document.dispute_id)
-
-    return data
   }
+
+  // Update document count
+  await this.updateDocumentCount(document.dispute_id)
+
+  return data
+}
 
   static async deleteDocument(id: string, disputeId: string): Promise<boolean> {
     const { error } = await this.supabase
