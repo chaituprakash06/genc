@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -81,11 +81,7 @@ export default function CollaboratorManagement({ disputeId, isOwner = false }: C
   })
   const [inviting, setInviting] = useState(false)
 
-  useEffect(() => {
-    loadData()
-  }, [disputeId])
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true)
     try {
       const [collaboratorsData, activitiesData] = await Promise.all([
@@ -100,7 +96,11 @@ export default function CollaboratorManagement({ disputeId, isOwner = false }: C
     } finally {
       setLoading(false)
     }
-  }
+  }, [disputeId])
+
+  useEffect(() => {
+    loadData()
+  }, [loadData])
 
   const handleInviteCollaborator = async (e: React.FormEvent) => {
     e.preventDefault()

@@ -35,7 +35,7 @@ const DialogTrigger = ({ children, asChild, ...props }: {
   if (!context) throw new Error("DialogTrigger must be used within Dialog")
 
   if (asChild && React.isValidElement(children)) {
-    const child = children as React.ReactElement<any>
+    const child = children as React.ReactElement<{onClick?: (e: React.MouseEvent) => void}>
     return React.cloneElement(child, {
       ...props,
       onClick: (e: React.MouseEvent) => {

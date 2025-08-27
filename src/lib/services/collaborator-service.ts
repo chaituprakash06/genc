@@ -3,7 +3,9 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Database } from '@/lib/database.types'
 
 type DisputeCollaborator = Database['public']['Tables']['dispute_collaborators']['Row']
-type CollaboratorInsert = Database['public']['Tables']['dispute_collaborators']['Insert']
+type CollaboratorInsert = Omit<Database['public']['Tables']['dispute_collaborators']['Insert'], 'invited_by'> & {
+  invited_by?: string
+}
 type CollaboratorUpdate = Database['public']['Tables']['dispute_collaborators']['Update']
 type CollaboratorActivity = Database['public']['Tables']['collaborator_activities']['Row']
 type ActivityInsert = Database['public']['Tables']['collaborator_activities']['Insert']
@@ -254,7 +256,7 @@ export const CollaboratorService = {
     const collaborator = await this.isCollaborator(disputeId, userId)
     if (!collaborator) return false
 
-    const permissions = collaborator.permissions as any
+    const permissions = collaborator.permissions as string[] | null
     if (!permissions || !Array.isArray(permissions)) return false
 
     return permissions.includes(permission)
