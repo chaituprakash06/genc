@@ -129,7 +129,7 @@ export default function ReportViewer({ report }: ReportViewerProps) {
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-2 text-sm text-gray-500">
           <Calendar className="w-4 h-4" />
-          Generated on {new Date(report.created_at).toLocaleString()}
+          Generated on {report.created_at ? new Date(report.created_at).toLocaleString() : 'Unknown date'}
         </div>
         <Button onClick={handleDownloadPDF} size="sm">
           <Download className="w-4 h-4 mr-2" />
