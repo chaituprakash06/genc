@@ -229,7 +229,7 @@ export default function DisputesPage() {
                         </span>
                         <span className="flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
-                          {new Date(dispute.created_at).toLocaleDateString()}
+                          {dispute.created_at ? new Date(dispute.created_at).toLocaleDateString() : 'Unknown'}
                         </span>
                       </div>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(dispute.status)}`}>
