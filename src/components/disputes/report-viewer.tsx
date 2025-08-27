@@ -39,7 +39,7 @@ export default function ReportViewer({ report }: ReportViewerProps) {
       `# ${report.title}`,
       '',
       `**Report Type:** ${report.report_type}`,
-      `**Generated:** ${new Date(report.created_at).toLocaleString()}`,
+      `**Generated:** ${report.created_at ? new Date(report.created_at).toLocaleString() : 'No date available'}`,
       '',
       '## Summary',
       report.summary || 'No summary available.',
