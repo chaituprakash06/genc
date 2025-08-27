@@ -252,6 +252,73 @@ export interface Database {
           updated_at?: string
         }
       }
+      dispute_collaborators: {
+        Row: {
+          id: string
+          dispute_id: string
+          user_id: string
+          email: string
+          role: string
+          permissions: Json | null
+          invited_by: string
+          invited_at: string
+          accepted_at: string | null
+          status: string
+        }
+        Insert: {
+          id?: string
+          dispute_id: string
+          user_id?: string | null
+          email: string
+          role?: string
+          permissions?: Json | null
+          invited_by: string
+          invited_at?: string
+          accepted_at?: string | null
+          status?: string
+        }
+        Update: {
+          id?: string
+          dispute_id?: string
+          user_id?: string | null
+          email?: string
+          role?: string
+          permissions?: Json | null
+          invited_by?: string
+          invited_at?: string
+          accepted_at?: string | null
+          status?: string
+        }
+      }
+      collaborator_activities: {
+        Row: {
+          id: string
+          dispute_id: string
+          user_id: string
+          activity_type: string
+          description: string
+          metadata: Json | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          dispute_id: string
+          user_id: string
+          activity_type: string
+          description: string
+          metadata?: Json | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          dispute_id?: string
+          user_id?: string
+          activity_type?: string
+          description?: string
+          metadata?: Json | null
+          created_at?: string
+        }
+      }
     }
   }
 }

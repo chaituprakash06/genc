@@ -8,12 +8,13 @@ import Navbar from '@/components/layout/navbar'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ArrowLeft, Upload, Brain, MessageSquare, Loader2 } from 'lucide-react'
+import { ArrowLeft, Upload, Brain, MessageSquare, Users, Loader2 } from 'lucide-react'
 import { DisputeService } from '@/lib/services/dispute-service'
 import DocumentUpload from '@/components/disputes/document-upload'
 import DocumentList from '@/components/disputes/document-list'
 import ReportViewer from '@/components/disputes/report-viewer'
 import DisputeChat from '@/components/disputes/dispute-chat'
+import CollaboratorManagement from '@/components/disputes/collaborator-management'
 import { Database } from '@/lib/database.types'
 
 type DisputeWithDetails = Database['public']['Tables']['disputes']['Row'] & {
@@ -205,6 +206,10 @@ export default function DisputeDetailPage() {
               <TabsTrigger value="documents">
                 Documents {dispute.documents && dispute.documents.length > 0 && `(${dispute.documents.length})`}
               </TabsTrigger>
+              <TabsTrigger value="collaborators">
+                <Users className="w-4 h-4 mr-1" />
+                Collaborators
+              </TabsTrigger>
               <TabsTrigger value="chat">Chat</TabsTrigger>
               <TabsTrigger value="analysis">
                 AI Analysis {dispute.reports && dispute.reports.length > 0 && `(${dispute.reports.length})`}
@@ -252,12 +257,20 @@ export default function DisputeDetailPage() {
               </Card>
 
               {/* Quick Actions */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab('documents')}>
                   <CardContent className="pt-6 text-center">
                     <Upload className="w-8 h-8 mx-auto mb-2 text-blue-600" />
                     <h3 className="font-semibold">Upload Documents</h3>
                     <p className="text-sm text-gray-600 mt-1">Add contracts and evidence</p>
+                  </CardContent>
+                </Card>
+
+                <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab('collaborators')}>
+                  <CardContent className="pt-6 text-center">
+                    <Users className="w-8 h-8 mx-auto mb-2 text-orange-600" />
+                    <h3 className="font-semibold">Manage Team</h3>
+                    <p className="text-sm text-gray-600 mt-1">Invite collaborators</p>
                   </CardContent>
                 </Card>
 
@@ -299,6 +312,13 @@ export default function DisputeDetailPage() {
                   </div>
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            <TabsContent value="collaborators">
+              <CollaboratorManagement 
+                disputeId={dispute.id}
+                isOwner={true} // TODO: Check if current user is the dispute owner
+              />
             </TabsContent>
 
             <TabsContent value="analysis">
