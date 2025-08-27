@@ -70,7 +70,7 @@ export default function WelcomeScreen() {
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-500 flex items-center gap-1">
                       <Clock className="w-3 h-3" />
-                      {new Date(dispute.created_at).toLocaleDateString()}
+                      {dispute.created_at ? new Date(dispute.created_at).toLocaleDateString() : 'No date'}
                     </span>
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                       dispute.status === 'active' 
