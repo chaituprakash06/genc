@@ -348,7 +348,7 @@ export default function CollaboratorManagement({ disputeId, isOwner = false }: C
                       </div>
                       <p className="text-sm text-gray-600">{collaborator.email}</p>
                       <p className="text-xs text-gray-500">
-                        Invited {formatActivityTime(collaborator.invited_at)}
+                        Invited {collaborator.invited_at ? formatActivityTime(collaborator.invited_at) : 'Unknown'}
                         {collaborator.accepted_at && ` • Joined ${formatActivityTime(collaborator.accepted_at)}`}
                       </p>
                     </div>
@@ -430,7 +430,7 @@ export default function CollaboratorManagement({ disputeId, isOwner = false }: C
                       <span className="text-gray-600">{activity.description}</span>
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
-                      {formatActivityTime(activity.created_at)}
+                      {activity.created_at ? formatActivityTime(activity.created_at) : 'Unknown'}
                     </p>
                   </div>
                 </div>

@@ -4,6 +4,9 @@ import { Database } from '@/lib/database.types'
 
 type DisputeCollaborator = Database['public']['Tables']['dispute_collaborators']['Row']
 type CollaboratorInsert = Database['public']['Tables']['dispute_collaborators']['Insert']
+type CollaboratorInvite = Omit<CollaboratorInsert, 'invited_by'> & {
+  invited_by?: string
+}
 type CollaboratorUpdate = Database['public']['Tables']['dispute_collaborators']['Update']
 type CollaboratorActivity = Database['public']['Tables']['collaborator_activities']['Row']
 type ActivityInsert = Database['public']['Tables']['collaborator_activities']['Insert']
@@ -36,7 +39,7 @@ export const CollaboratorService = {
   },
 
   // Invite a collaborator
-  async inviteCollaborator(collaborator: CollaboratorInsert): Promise<DisputeCollaborator | null> {
+  async inviteCollaborator(collaborator: CollaboratorInvite): Promise<DisputeCollaborator | null> {
     const supabase = createClientComponentClient<Database>()
     
     const { data: { user } } = await supabase.auth.getUser()
