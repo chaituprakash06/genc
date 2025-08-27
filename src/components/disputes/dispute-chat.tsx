@@ -294,7 +294,7 @@ export default function DisputeChat({ dispute }: DisputeChatProps) {
 
                   {/* Timestamp */}
                   <div className="px-2 text-xs text-gray-500">
-                    {new Date(message.created_at).toLocaleTimeString()}
+                    {message.created_at ? new Date(message.created_at).toLocaleTimeString() : 'No timestamp'}
                   </div>
                 </div>
               </div>
