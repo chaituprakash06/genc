@@ -9,14 +9,8 @@ import { DisputeService } from '@/lib/services/dispute-service'
 import { createClient } from '@/lib/supabase-browser'
 import { Database } from '@/lib/database.types'
 
-// Extend the Document type to include new fields
-type Document = Database['public']['Tables']['user_documents']['Row'] & {
-  extracted_date?: string | null
-  document_type?: string | null
-  extraction_confidence?: 'high' | 'medium' | 'low' | null
-  processed_at?: string | null
-  original_name?: string | null
-}
+// Use the database type directly
+type Document = Database['public']['Tables']['user_documents']['Row']
 
 interface DocumentListProps {
   disputeId: string
@@ -232,7 +226,7 @@ export default function DocumentList({ disputeId, documents: propDocuments, onDo
                     {doc.extracted_date && (
                       <span className="flex items-center gap-1">
                         <Calendar className="w-3 h-3" />
-                        {formatDate(doc.extracted_date)}
+                        {doc.extracted_date ? formatDate(doc.extracted_date) : 'Unknown'}
                         {doc.extraction_confidence === 'low' && (
                           <span className="text-yellow-600 ml-1">(estimated)</span>
                         )}
@@ -241,7 +235,7 @@ export default function DocumentList({ disputeId, documents: propDocuments, onDo
                     
                     <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3" />
-                      Uploaded {formatDate(doc.uploaded_at)}
+                      Uploaded {doc.uploaded_at ? formatDate(doc.uploaded_at) : 'Unknown'}
                     </span>
                     
                     {doc.processed_at && (
