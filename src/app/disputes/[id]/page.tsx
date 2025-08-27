@@ -182,9 +182,9 @@ export default function DisputeDetailPage() {
             <div>
               <h1 className="text-3xl font-bold mb-2">{dispute.title}</h1>
               <div className="flex items-center gap-4 text-sm text-gray-600">
-                <span>Created {new Date(dispute.created_at).toLocaleDateString()}</span>
+                <span>Created {dispute.created_at ? new Date(dispute.created_at).toLocaleDateString() : 'Unknown'}</span>
                 <span>•</span>
-                <span>Last updated {new Date(dispute.last_modified).toLocaleDateString()}</span>
+                <span>Last updated {dispute.last_modified ? new Date(dispute.last_modified).toLocaleDateString() : 'Unknown'}</span>
               </div>
             </div>
             <div className="flex items-center gap-2">
