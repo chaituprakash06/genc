@@ -3,9 +3,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Database } from '@/lib/database.types'
 
 type DisputeCollaborator = Database['public']['Tables']['dispute_collaborators']['Row']
-type CollaboratorInsert = Omit<Database['public']['Tables']['dispute_collaborators']['Insert'], 'invited_by'> & {
-  invited_by?: string
-}
+type CollaboratorInsert = Database['public']['Tables']['dispute_collaborators']['Insert']
 type CollaboratorUpdate = Database['public']['Tables']['dispute_collaborators']['Update']
 type CollaboratorActivity = Database['public']['Tables']['collaborator_activities']['Row']
 type ActivityInsert = Database['public']['Tables']['collaborator_activities']['Insert']
