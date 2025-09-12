@@ -1,7 +1,7 @@
 import { createRouteClient } from '@/lib/supabase-server'
 import { NextResponse } from 'next/server'
 
-export async function POST(request: Request) {
+export async function POST() {
   const supabase = createRouteClient()
   
   try {
