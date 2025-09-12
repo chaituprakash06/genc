@@ -47,9 +47,30 @@ export default function Navbar() {
   }, [supabase])
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut({ scope: 'local' })
-    router.push('/')
-    router.refresh()
+    try {
+      // Clear the session without making API call
+      await supabase.auth.signOut({ scope: 'local' })
+      
+      // Clear any stored tokens manually
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('supabase.auth.token')
+        sessionStorage.removeItem('supabase.auth.token')
+      }
+      
+      router.push('/')
+      router.refresh()
+    } catch (error) {
+      console.error('Sign-out error:', error)
+      
+      // Force clear session and redirect anyway
+      if (typeof window !== 'undefined') {
+        localStorage.clear()
+        sessionStorage.clear()
+      }
+      
+      router.push('/')
+      router.refresh()
+    }
   }
 
   const navItems = [
