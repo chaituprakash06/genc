@@ -85,18 +85,15 @@ export default function Navbar() {
       <div className="container mx-auto px-6">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center space-x-8">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 relative">
+            <Link href="/" className="inline-flex items-center justify-center h-9">
                 <Image 
                   src="/logo.png"  // or "/logo.svg" if you're using SVG
                   alt="GenC Logo"
-                  width={32}
-                  height={32}
+                  width={90}
+                  height={90}
                   className="rounded-lg"  // Keeps the rounded corners like the original
                   priority  // Loads the logo immediately
                 />
-              </div>
-              <span className="text-xl font-bold">GenC</span>
             </Link>
             
             <div className="hidden md:flex items-center space-x-1">

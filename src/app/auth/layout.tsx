@@ -11,18 +11,15 @@ export default function AuthLayout({
       {/* Simple header */}
       <header className="border-b bg-white dark:bg-gray-900">
         <div className="container mx-auto px-6 py-4">
-          <Link href="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 relative">
+          <Link href="/" className="inline-flex items-center justify-center h-9">
                 <Image 
                   src="/logo.png"  // or "/logo.svg" if you're using SVG
                   alt="GenC Logo"
-                  width={32}
-                  height={32}
+                  width={36}
+                  height={36}
                   className="rounded-lg"  // Keeps the rounded corners like the original
                   priority  // Loads the logo immediately
                 />
-              </div>
-            <span className="text-xl font-bold">GenC</span>
           </Link>
         </div>
       </header>
