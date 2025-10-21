@@ -288,7 +288,7 @@ export default function LandingPage() {
             Ready to strengthen your negotiation position?
           </h2>
           <p className="text-xl text-gray-600 dark:text-gray-400 mb-8">
-            Join thousands of users who&apos;ve successfully resolved their disputes with GenC
+            Join in and resolve your dispute with GenC
           </p>
           <Link href="/auth/signup">
             <Button size="lg" className="min-w-[200px]">
