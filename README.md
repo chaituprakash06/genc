@@ -1,4 +1,4 @@
-# GenC - AI Contract Negotiation Expert
+# GenC - AI Dispute Negotiation Expert
 
 GenC is an AI-powered contract negotiation tool that helps users gain the upper hand in their contract negotiations by providing strategic advice based on game theory and negotiation tactics.
 
