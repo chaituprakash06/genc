@@ -1,10 +1,10 @@
 # GenC - AI Dispute Negotiation Expert
 
-GenC is an AI-powered contract negotiation tool that helps users gain the upper hand in their contract negotiations by providing strategic advice based on game theory and negotiation tactics.
+GenC is an AI-powered dispute negotiation tool that helps users gain the upper hand in their contract negotiations by providing strategic advice based on game theory and negotiation tactics.
 
 ## Overview
 
-GenC uses OpenAI's o3-mini model to analyze contracts and suggest negotiation strategies. The assistant acts as a general counsel and negotiation expert, helping users identify leverage points, contradictions, and effective communication strategies.
+GenC uses OpenAI's o3-mini model to analyze documents and suggest negotiation strategies. The assistant acts as a general counsel and negotiation expert, helping users identify leverage points, contradictions, and effective communication strategies.
 
 ## Setup Instructions
 
